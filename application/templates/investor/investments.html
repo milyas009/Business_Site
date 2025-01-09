@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}My Investments{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Investment Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form class="row g-3" method="GET">
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All</option>
+                        <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
+                        <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Sort By</label>
+                    <select class="form-select" name="sort">
+                        <option value="date_desc" {% if request.args.get('sort') == 'date_desc' %}selected{% endif %}>Date (Newest)</option>
+                        <option value="date_asc" {% if request.args.get('sort') == 'date_asc' %}selected{% endif %}>Date (Oldest)</option>
+                        <option value="amount_desc" {% if request.args.get('sort') == 'amount_desc' %}selected{% endif %}>Amount (High to Low)</option>
+                        <option value="amount_asc" {% if request.args.get('sort') == 'amount_asc' %}selected{% endif %}>Amount (Low to High)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <input type="date" class="form-control" name="date_from" value="{{ request.args.get('date_from', '') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <input type="date" class="form-control" name="date_to" value="{{ request.args.get('date_to', '') }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{{ url_for('investor.investments') }}" class="btn btn-outline-secondary">Clear Filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Investments List -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">My Investments</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Amount</th>
+                            <th>Investment Date</th>
+                            <th>Returns</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for investment in investments %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if investment.product.image_url %}
+                                    <img src="{{ investment.product.image_url }}" class="rounded me-2" width="32" height="32">
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ investment.product.name }}</strong>
+                                        <div class="text-muted small">{{ investment.product.category }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>${{ "%.2f"|format(investment.amount) }}</td>
+                            <td>{{ investment.investment_date.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <span class="text-{{ 'success' if investment.returns > 0 else 'danger' }}">
+                                    ${{ "%.2f"|format(investment.returns) }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if investment.status == 'active' else 'secondary' }}">
+                                    {{ investment.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('investor.investment_details', investment_id=investment.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        View Details
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle dropdown-toggle-split" 
+                                            data-bs-toggle="dropdown"></button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('investor.download_documents', investment_id=investment.id) }}">
+                                                <i class="bi bi-download me-2"></i> Download Documents
+                                            </a>
+                                        </li>
+                                        {% if investment.status == 'active' %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('investor.request_exit', investment_id=investment.id) }}">
+                                                <i class="bi bi-box-arrow-right me-2"></i> Request Exit
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="bi bi-inbox fs-1"></i>
+                                    <p class="mt-2">No investments found</p>
+                                    <a href="{{ url_for('investor.opportunities') }}" class="btn btn-primary">Browse Opportunities</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination.pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+                        <a class="page-link" href="{{ url_for('investor.investments', page=pagination.prev_num, **request.args) }}">Previous</a>
+                    </li>
+                    {% for page in pagination.iter_pages() %}
+                        {% if page %}
+                            <li class="page-item {{ 'active' if page == pagination.page }}">
+                                <a class="page-link" href="{{ url_for('investor.investments', page=page, **request.args) }}">{{ page }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+                        <a class="page-link" href="{{ url_for('investor.investments', page=pagination.next_num, **request.args) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

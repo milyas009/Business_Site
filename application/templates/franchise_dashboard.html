@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3">Franchise Dashboard</h1>
+            <p class="text-muted">{{ franchise.name }} - {{ franchise.location }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('manage_inventory') }}" class="btn btn-primary">
+                <i class="bi bi-box-seam me-2"></i>Manage Inventory
+            </a>
+        </div>
+    </div>
+
+    <!-- Store Performance Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Today's Sales</h6>
+                    <h3 class="mb-0">$1,234.56</h3>
+                    <small class="text-success">
+                        <i class="bi bi-arrow-up"></i> 12.5% vs yesterday
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Monthly Revenue</h6>
+                    <h3 class="mb-0">$45,678.90</h3>
+                    <small class="text-success">
+                        <i class="bi bi-arrow-up"></i> 8.3% vs last month
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Total Products</h6>
+                    <h3 class="mb-0">{{ inventory|length }}</h3>
+                    <small class="text-muted">Active inventory items</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Low Stock Items</h6>
+                    <h3 class="mb-0 text-warning">5</h3>
+                    <small class="text-muted">Need restock soon</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Recent Transactions</h5>
+        </div>
+        <div class="card-body">
+            {% if recent_transactions %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Product</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in recent_transactions %}
+                        <tr>
+                            <td>{{ transaction.transaction_id }}</td>
+                            <td>{{ transaction.product.name }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if transaction.transaction_type == 'sale' else 'info' }}">
+                                    {{ transaction.transaction_type.title() }}
+                                </span>
+                            </td>
+                            <td>{{ transaction.quantity }}</td>
+                            <td>${{ "%.2f"|format(transaction.total_amount) }}</td>
+                            <td>{{ transaction.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-receipt display-4 text-muted mb-3"></i>
+                <h5>No Recent Transactions</h5>
+                <p class="text-muted">Transactions will appear here once you start making sales</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Inventory Overview -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Inventory Overview</h5>
+            <a href="{{ url_for('manage_inventory') }}" class="btn btn-sm btn-outline-primary">Manage Inventory</a>
+        </div>
+        <div class="card-body">
+            {% if inventory %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Current Stock</th>
+                            <th>Status</th>
+                            <th>Last Updated</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inventory %}
+                        <tr>
+                            <td>{{ item.product.name }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>
+                                {% if item.quantity > 20 %}
+                                <span class="badge bg-success">Good</span>
+                                {% elif item.quantity > 5 %}
+                                <span class="badge bg-warning">Medium</span>
+                                {% else %}
+                                <span class="badge bg-danger">Low</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.last_updated.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary">Restock</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-box-seam display-4 text-muted mb-3"></i>
+                <h5>No Inventory Items</h5>
+                <p class="text-muted">Start adding products to your inventory</p>
+                <a href="{{ url_for('manage_inventory') }}" class="btn btn-primary">Add Products</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

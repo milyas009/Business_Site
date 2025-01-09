@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">My Profile</h1>
+    
+    <div class="row">
+        <!-- Profile Information -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <img src="{{ url_for('static', filename='images/default-profile.png') }}" 
+                         class="rounded-circle mb-3" alt="Profile Picture" style="width: 150px;">
+                    <h3>{{ current_user.first_name }} {{ current_user.last_name }}</h3>
+                    <p class="text-muted">{{ current_user.role | title }}</p>
+                    <button class="btn btn-primary">Edit Profile Picture</button>
+                </div>
+            </div>
+            
+            <!-- Notification Preferences -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Notification Preferences</h5>
+                    <form>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="emailNotifications" 
+                                   {{ 'checked' if current_user.notification_preferences.email_notifications }}>
+                            <label class="form-check-label" for="emailNotifications">
+                                Email Notifications
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="investmentUpdates"
+                                   {{ 'checked' if current_user.notification_preferences.investment_updates }}>
+                            <label class="form-check-label" for="investmentUpdates">
+                                Investment Updates
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="newsletter"
+                                   {{ 'checked' if current_user.notification_preferences.newsletter }}>
+                            <label class="form-check-label" for="newsletter">
+                                Newsletter
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Save Preferences</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profile Details -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3>Personal Information</h3>
+                    <form method="POST" action="{{ url_for('main.update_profile') }}">
+                        {{ form.hidden_tag() }}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">First Name</label>
+                                <input type="text" class="form-control" name="first_name" 
+                                       value="{{ current_user.first_name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" class="form-control" name="last_name"
+                                       value="{{ current_user.last_name }}" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email"
+                                   value="{{ current_user.email }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Information</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Privacy Settings -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3>Privacy Settings</h3>
+                    <form method="POST" action="{{ url_for('main.update_privacy') }}">
+                        {{ privacy_form.hidden_tag() }}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="profileVisible" name="profile_visible"
+                                   {{ 'checked' if current_user.privacy_settings.profile_visible }}>
+                            <label class="form-check-label" for="profileVisible">
+                                Make profile visible to other users
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="showInvestments" name="show_investments"
+                                   {{ 'checked' if current_user.privacy_settings.show_investments }}>
+                            <label class="form-check-label" for="showInvestments">
+                                Show my investments to other users
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Privacy Settings</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Activity Summary -->
+            <div class="card">
+                <div class="card-body">
+                    <h3>Activity Summary</h3>
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h4>{{ stats.total_investments }}</h4>
+                            <p class="text-muted">Active Investments</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h4>${{ stats.total_invested }}</h4>
+                            <p class="text-muted">Total Invested</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h4>{{ stats.avg_roi }}%</h4>
+                            <p class="text-muted">Average ROI</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% block title %}Activity Logs{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form class="row g-3" method="GET">
+                <div class="col-md-3">
+                    <label class="form-label">Log Level</label>
+                    <select class="form-select" name="level">
+                        <option value="">All Levels</option>
+                        <option value="info" {% if request.args.get('level') == 'info' %}selected{% endif %}>Info</option>
+                        <option value="warning" {% if request.args.get('level') == 'warning' %}selected{% endif %}>Warning</option>
+                        <option value="error" {% if request.args.get('level') == 'error' %}selected{% endif %}>Error</option>
+                        <option value="critical" {% if request.args.get('level') == 'critical' %}selected{% endif %}>Critical</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">User</label>
+                    <select class="form-select" name="user">
+                        <option value="">All Users</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if request.args.get('user') == user.id %}selected{% endif %}>
+                            {{ user.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <select class="form-select" name="date_range">
+                        <option value="today" {% if request.args.get('date_range') == 'today' %}selected{% endif %}>Today</option>
+                        <option value="yesterday" {% if request.args.get('date_range') == 'yesterday' %}selected{% endif %}>Yesterday</option>
+                        <option value="this_week" {% if request.args.get('date_range') == 'this_week' %}selected{% endif %}>This Week</option>
+                        <option value="last_week" {% if request.args.get('date_range') == 'last_week' %}selected{% endif %}>Last Week</option>
+                        <option value="this_month" {% if request.args.get('date_range') == 'this_month' %}selected{% endif %}>This Month</option>
+                        <option value="custom" {% if request.args.get('date_range') == 'custom' %}selected{% endif %}>Custom Range</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="form-control" name="search" 
+                           value="{{ request.args.get('search', '') }}" placeholder="Search logs...">
+                </div>
+                <div class="col-md-3 date-range" style="display: none;">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" class="form-control" name="start_date" 
+                           value="{{ request.args.get('start_date', '') }}">
+                </div>
+                <div class="col-md-3 date-range" style="display: none;">
+                    <label class="form-label">End Date</label>
+                    <input type="date" class="form-control" name="end_date" 
+                           value="{{ request.args.get('end_date', '') }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{{ url_for('admin.logs') }}" class="btn btn-outline-secondary">Clear Filters</a>
+                    <div class="float-end">
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" 
+                                data-bs-target="#exportLogsModal">
+                            <i class="bi bi-download"></i> Export Logs
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Level</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>IP Address</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                <span class="badge bg-{{ 
+                                    'info' if log.level == 'info'
+                                    else 'warning' if log.level == 'warning'
+                                    else 'danger' if log.level == 'error'
+                                    else 'dark' if log.level == 'critical'
+                                    else 'secondary' }}">
+                                    {{ log.level }}
+                                </span>
+                            </td>
+                            <td>{{ log.user.name if log.user else 'System' }}</td>
+                            <td>{{ log.action }}</td>
+                            <td>{{ log.ip_address }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-link" data-bs-toggle="modal" 
+                                        data-bs-target="#logDetailsModal{{ log.id }}">
+                                    View Details
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination.pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+                        <a class="page-link" href="{{ url_for('admin.logs', page=pagination.prev_num, **request.args) }}">Previous</a>
+                    </li>
+                    {% for page in pagination.iter_pages() %}
+                        {% if page %}
+                            <li class="page-item {{ 'active' if page == pagination.page }}">
+                                <a class="page-link" href="{{ url_for('admin.logs', page=page, **request.args) }}">{{ page }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+                        <a class="page-link" href="{{ url_for('admin.logs', page=pagination.next_num, **request.args) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Export Logs Modal -->
+<div class="modal fade" id="exportLogsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Export Logs</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.export_logs') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Export Format</label>
+                        <select class="form-select" name="format" required>
+                            <option value="csv">CSV</option>
+                            <option value="json">JSON</option>
+                            <option value="excel">Excel</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date Range</label>
+                        <select class="form-select" name="date_range" required>
+                            <option value="all">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="this_week">This Week</option>
+                            <option value="this_month">This Month</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 export-date-range" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" class="form-control" name="export_start_date">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">End Date</label>
+                                <input type="date" class="form-control" name="export_end_date">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="include_details" checked>
+                            <label class="form-check-label">Include detailed information</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Export</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Log Details Modals -->
+{% for log in logs %}
+<div class="modal fade" id="logDetailsModal{{ log.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Log Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <h6>Basic Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td class="text-muted">Timestamp</td>
+                                <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Level</td>
+                                <td>{{ log.level }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">User</td>
+                                <td>{{ log.user.name if log.user else 'System' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Action</td>
+                                <td>{{ log.action }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Technical Details</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td class="text-muted">IP Address</td>
+                                <td>{{ log.ip_address }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">User Agent</td>
+                                <td>{{ log.user_agent }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Request Method</td>
+                                <td>{{ log.request_method }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Request URL</td>
+                                <td>{{ log.request_url }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    {% if log.details %}
+                    <div class="col-12">
+                        <h6>Additional Details</h6>
+                        <pre class="bg-light p-3 rounded"><code>{{ log.details }}</code></pre>
+                    </div>
+                    {% endif %}
+                    {% if log.stack_trace %}
+                    <div class="col-12">
+                        <h6>Stack Trace</h6>
+                        <pre class="bg-light p-3 rounded"><code>{{ log.stack_trace }}</code></pre>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle date range visibility
+    const dateRange = document.querySelector('select[name="date_range"]');
+    const dateRangeInputs = document.querySelectorAll('.date-range');
+
+    function toggleDateRange() {
+        const isCustom = dateRange.value === 'custom';
+        dateRangeInputs.forEach(input => {
+            input.style.display = isCustom ? 'block' : 'none';
+        });
+    }
+
+    dateRange.addEventListener('change', toggleDateRange);
+    toggleDateRange();
+
+    // Handle export date range visibility
+    const exportDateRange = document.querySelector('select[name="date_range"]');
+    const exportDateRangeInputs = document.querySelector('.export-date-range');
+
+    function toggleExportDateRange() {
+        const isCustom = exportDateRange.value === 'custom';
+        exportDateRangeInputs.style.display = isCustom ? 'block' : 'none';
+    }
+
+    exportDateRange.addEventListener('change', toggleExportDateRange);
+    toggleExportDateRange();
+});
+</script>
+{% endblock %}
+{% endblock %}

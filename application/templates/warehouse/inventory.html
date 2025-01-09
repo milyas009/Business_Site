@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+{% block title %}Inventory Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Action Buttons -->
+    <div class="mb-4">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+            <i class="bi bi-plus-lg"></i> Add Product
+        </button>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">
+            <i class="bi bi-upload"></i> Import Inventory
+        </button>
+        <a href="{{ url_for('warehouse.export_inventory') }}" class="btn btn-outline-primary">
+            <i class="bi bi-download"></i> Export Inventory
+        </a>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#batchUpdateModal">
+            <i class="bi bi-pencil"></i> Batch Update
+        </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form class="row g-3" method="GET">
+                <div class="col-md-3">
+                    <label class="form-label">Category</label>
+                    <select class="form-select" name="category">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category }}" {% if request.args.get('category') == category %}selected{% endif %}>
+                            {{ category }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Stock Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All Status</option>
+                        <option value="in_stock" {% if request.args.get('status') == 'in_stock' %}selected{% endif %}>In Stock</option>
+                        <option value="low_stock" {% if request.args.get('status') == 'low_stock' %}selected{% endif %}>Low Stock</option>
+                        <option value="out_of_stock" {% if request.args.get('status') == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Location</label>
+                    <select class="form-select" name="location">
+                        <option value="">All Locations</option>
+                        {% for section in warehouse.sections %}
+                        <option value="{{ section }}" {% if request.args.get('location') == section %}selected{% endif %}>
+                            Section {{ section }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="form-control" name="search" placeholder="Search products..." 
+                           value="{{ request.args.get('search', '') }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{{ url_for('warehouse.inventory') }}" class="btn btn-outline-secondary">Clear Filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Inventory Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" class="form-check-input" id="selectAll">
+                            </th>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Stock Level</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inventory %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="form-check-input product-select" 
+                                       value="{{ item.id }}">
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if item.product.image_url %}
+                                    <img src="{{ item.product.image_url }}" class="rounded me-2" width="32" height="32">
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ item.product.name }}</strong>
+                                        <div class="text-muted small">SKU: {{ item.product.id[:8] }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ item.product.category }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {{ item.quantity }}
+                                    <button class="btn btn-sm btn-link p-0 ms-2" data-bs-toggle="modal" 
+                                            data-bs-target="#adjustStockModal{{ item.id }}">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                </div>
+                            </td>
+                            <td>Section {{ item.location_in_warehouse }}</td>
+                            <td>
+                                {% set status = get_stock_status(item) %}
+                                <span class="badge bg-{{ status.color }}">{{ status.label }}</span>
+                            </td>
+                            <td>{{ item.last_updated.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" 
+                                            data-bs-target="#moveModal{{ item.id }}">
+                                        Move
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split" 
+                                            data-bs-toggle="dropdown"></button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="#" data-bs-toggle="modal" 
+                                               data-bs-target="#historyModal{{ item.id }}">
+                                                <i class="bi bi-clock-history me-2"></i> View History
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" data-bs-toggle="modal" 
+                                               data-bs-target="#editModal{{ item.id }}">
+                                                <i class="bi bi-pencil me-2"></i> Edit Details
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination.pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+                        <a class="page-link" href="{{ url_for('warehouse.inventory', page=pagination.prev_num, **request.args) }}">Previous</a>
+                    </li>
+                    {% for page in pagination.iter_pages() %}
+                        {% if page %}
+                            <li class="page-item {{ 'active' if page == pagination.page }}">
+                                <a class="page-link" href="{{ url_for('warehouse.inventory', page=page, **request.args) }}">{{ page }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+                        <a class="page-link" href="{{ url_for('warehouse.inventory', page=pagination.next_num, **request.args) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('warehouse.add_product') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" name="category" required>
+                            <option value="">Select Category</option>
+                            {% for category in categories %}
+                            <option value="{{ category }}">{{ category }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Initial Stock</label>
+                        <input type="number" class="form-control" name="stock" required min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Location</label>
+                        <select class="form-select" name="location" required>
+                            <option value="">Select Location</option>
+                            {% for section in warehouse.sections %}
+                            <option value="{{ section }}">Section {{ section }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Product Image</label>
+                        <input type="file" class="form-control" name="image">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Inventory</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('warehouse.import_inventory') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">CSV File</label>
+                        <input type="file" class="form-control" name="file" accept=".csv" required>
+                    </div>
+                    <div class="form-text">
+                        Download the <a href="{{ url_for('warehouse.download_template') }}">template file</a> 
+                        to see the required format.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Batch Update Modal -->
+<div class="modal fade" id="batchUpdateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Batch Update</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('warehouse.batch_update') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Action</label>
+                        <select class="form-select" name="action" required>
+                            <option value="">Select Action</option>
+                            <option value="move">Move to Location</option>
+                            <option value="adjust">Adjust Stock</option>
+                            <option value="update_status">Update Status</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 action-field" id="moveField" style="display: none;">
+                        <label class="form-label">New Location</label>
+                        <select class="form-select" name="new_location">
+                            {% for section in warehouse.sections %}
+                            <option value="{{ section }}">Section {{ section }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3 action-field" id="adjustField" style="display: none;">
+                        <label class="form-label">Adjustment Type</label>
+                        <select class="form-select" name="adjustment_type">
+                            <option value="add">Add</option>
+                            <option value="subtract">Subtract</option>
+                            <option value="set">Set to</option>
+                        </select>
+                        <label class="form-label mt-2">Quantity</label>
+                        <input type="number" class="form-control" name="quantity" min="0">
+                    </div>
+                    <div class="mb-3 action-field" id="statusField" style="display: none;">
+                        <label class="form-label">New Status</label>
+                        <select class="form-select" name="new_status">
+                            <option value="active">Active</option>
+                            <option value="discontinued">Discontinued</option>
+                            <option value="on_hold">On Hold</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Selected Items</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Select All Checkbox
+    const selectAll = document.getElementById('selectAll');
+    const productCheckboxes = document.querySelectorAll('.product-select');
+
+    selectAll.addEventListener('change', function() {
+        productCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+
+    // Batch Update Action Fields
+    const actionSelect = document.querySelector('select[name="action"]');
+    const actionFields = document.querySelectorAll('.action-field');
+
+    actionSelect.addEventListener('change', function() {
+        actionFields.forEach(field => field.style.display = 'none');
+        const selectedField = document.getElementById(this.value + 'Field');
+        if (selectedField) {
+            selectedField.style.display = 'block';
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

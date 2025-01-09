@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Users</h6>
+                            <h4 class="mb-0">{{ stats.total_users }}</h4>
+                            <small class="text-{{ 'success' if stats.user_growth > 0 else 'danger' }}">
+                                {{ "%.1f"|format(stats.user_growth) }}% from last month
+                            </small>
+                        </div>
+                        <div class="avatar avatar-lg bg-primary-subtle">
+                            <i class="bi bi-people fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Active Franchises</h6>
+                            <h4 class="mb-0">{{ stats.active_franchises }}</h4>
+                            <small class="text-{{ 'success' if stats.franchise_growth > 0 else 'danger' }}">
+                                {{ "%.1f"|format(stats.franchise_growth) }}% from last month
+                            </small>
+                        </div>
+                        <div class="avatar avatar-lg bg-success-subtle">
+                            <i class="bi bi-shop fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Revenue</h6>
+                            <h4 class="mb-0">${{ "%.2f"|format(stats.total_revenue) }}</h4>
+                            <small class="text-{{ 'success' if stats.revenue_growth > 0 else 'danger' }}">
+                                {{ "%.1f"|format(stats.revenue_growth) }}% from last month
+                            </small>
+                        </div>
+                        <div class="avatar avatar-lg bg-info-subtle">
+                            <i class="bi bi-currency-dollar fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">System Health</h6>
+                            <h4 class="mb-0">{{ "%.1f"|format(stats.system_health) }}%</h4>
+                            <small class="text-{{ 'success' if stats.system_health >= 90 else 'warning' if stats.system_health >= 70 else 'danger' }}">
+                                {{ stats.system_status }}
+                            </small>
+                        </div>
+                        <div class="avatar avatar-lg bg-warning-subtle">
+                            <i class="bi bi-heart-pulse fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Revenue Chart -->
+        <div class="col-lg-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Revenue Overview</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                                data-bs-toggle="dropdown">
+                            This Year
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">This Month</a></li>
+                            <li><a class="dropdown-item" href="#">This Quarter</a></li>
+                            <li><a class="dropdown-item" href="#">This Year</a></li>
+                            <li><a class="dropdown-item" href="#">Last Year</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Health -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">System Health</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>CPU Usage</span>
+                            <span>{{ stats.cpu_usage }}%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-{{ 'success' if stats.cpu_usage < 70 else 'warning' if stats.cpu_usage < 90 else 'danger' }}" 
+                                 role="progressbar" style="width: {{ stats.cpu_usage }}%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Memory Usage</span>
+                            <span>{{ stats.memory_usage }}%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-{{ 'success' if stats.memory_usage < 70 else 'warning' if stats.memory_usage < 90 else 'danger' }}" 
+                                 role="progressbar" style="width: {{ stats.memory_usage }}%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Storage Usage</span>
+                            <span>{{ stats.storage_usage }}%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-{{ 'success' if stats.storage_usage < 70 else 'warning' if stats.storage_usage < 90 else 'danger' }}" 
+                                 role="progressbar" style="width: {{ stats.storage_usage }}%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Database Health</span>
+                            <span>{{ stats.db_health }}%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-{{ 'success' if stats.db_health < 70 else 'warning' if stats.db_health < 90 else 'danger' }}" 
+                                 role="progressbar" style="width: {{ stats.db_health }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Activities -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Activities</h5>
+                    <a href="{{ url_for('admin.activity_logs') }}" class="btn btn-sm btn-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for activity in recent_activities %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon bg-{{ activity.type_color }}">
+                                <i class="bi bi-{{ activity.icon }}"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ activity.user }}</strong>
+                                    <small class="text-muted">{{ activity.timestamp.strftime('%H:%M') }}</small>
+                                </div>
+                                <p class="mb-0">{{ activity.description }}</p>
+                                {% if activity.details %}
+                                <small class="text-muted">{{ activity.details }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Alerts -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">System Alerts</h5>
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" 
+                            data-bs-target="#configureAlertsModal">
+                        Configure
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for alert in system_alerts %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">
+                                    <i class="bi bi-{{ alert.icon }} text-{{ alert.severity }} me-2"></i>
+                                    {{ alert.title }}
+                                </h6>
+                                <small class="text-muted">{{ alert.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            <p class="mb-1">{{ alert.message }}</p>
+                            {% if alert.action_required %}
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-{{ alert.severity }}" data-bs-toggle="modal" 
+                                        data-bs-target="#alertActionModal{{ alert.id }}">
+                                    Take Action
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="avatar avatar-lg bg-primary-subtle mx-auto mb-3">
+                        <i class="bi bi-person-plus fs-3"></i>
+                    </div>
+                    <h6>Add User</h6>
+                    <p class="text-muted small">Create new user accounts</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                        Add User
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="avatar avatar-lg bg-success-subtle mx-auto mb-3">
+                        <i class="bi bi-gear fs-3"></i>
+                    </div>
+                    <h6>System Settings</h6>
+                    <p class="text-muted small">Configure system parameters</p>
+                    <a href="{{ url_for('admin.settings') }}" class="btn btn-success">
+                        Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="avatar avatar-lg bg-info-subtle mx-auto mb-3">
+                        <i class="bi bi-file-earmark-text fs-3"></i>
+                    </div>
+                    <h6>Generate Report</h6>
+                    <p class="text-muted small">Create system reports</p>
+                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#generateReportModal">
+                        Generate
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="avatar avatar-lg bg-warning-subtle mx-auto mb-3">
+                        <i class="bi bi-shield-check fs-3"></i>
+                    </div>
+                    <h6>Security Audit</h6>
+                    <p class="text-muted small">Review security settings</p>
+                    <a href="{{ url_for('admin.security_audit') }}" class="btn btn-warning">
+                        Audit
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configure Alerts Modal -->
+<div class="modal fade" id="configureAlertsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Configure System Alerts</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.configure_alerts') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Alert Categories</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="categories[]" 
+                                   value="system" checked>
+                            <label class="form-check-label">System Alerts</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="categories[]" 
+                                   value="security" checked>
+                            <label class="form-check-label">Security Alerts</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="categories[]" 
+                                   value="performance" checked>
+                            <label class="form-check-label">Performance Alerts</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notification Method</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="notifications[]" 
+                                   value="email" checked>
+                            <label class="form-check-label">Email Notifications</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="notifications[]" 
+                                   value="dashboard" checked>
+                            <label class="form-check-label">Dashboard Notifications</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Alert Threshold</label>
+                        <select class="form-select" name="threshold">
+                            <option value="low">Low (All Alerts)</option>
+                            <option value="medium" selected>Medium (Important Alerts)</option>
+                            <option value="high">High (Critical Alerts Only)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Action Modals -->
+{% for alert in system_alerts %}
+{% if alert.action_required %}
+<div class="modal fade" id="alertActionModal{{ alert.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ alert.title }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>{{ alert.action_description }}</p>
+                <form action="{{ url_for('admin.handle_alert', alert_id=alert.id) }}" method="POST">
+                    {% if alert.action_options %}
+                    <div class="mb-3">
+                        <label class="form-label">Action</label>
+                        <select class="form-select" name="action" required>
+                            {% for option in alert.action_options %}
+                            <option value="{{ option.value }}">{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-{{ alert.severity }}">Take Action</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Revenue Chart
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ revenue_data.labels|tojson }},
+            datasets: [{
+                label: 'Revenue',
+                data: {{ revenue_data.values|tojson }},
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

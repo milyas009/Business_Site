@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+{% block title %}Franchise Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Report Types -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Performance Reports</h6>
+                            <h4 class="mb-0">{{ stats.performance_reports }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-primary-subtle">
+                            <i class="bi bi-graph-up fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Compliance Reports</h6>
+                            <h4 class="mb-0">{{ stats.compliance_reports }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-success-subtle">
+                            <i class="bi bi-shield-check fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Financial Reports</h6>
+                            <h4 class="mb-0">{{ stats.financial_reports }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-info-subtle">
+                            <i class="bi bi-cash-stack fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Audit Reports</h6>
+                            <h4 class="mb-0">{{ stats.audit_reports }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-warning-subtle">
+                            <i class="bi bi-file-earmark-text fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Generator -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Generate Report</h5>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('franchise.generate_report') }}" method="POST">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Report Type</label>
+                        <select class="form-select" name="report_type" required>
+                            <option value="">Select Report Type</option>
+                            <option value="performance">Performance Report</option>
+                            <option value="compliance">Compliance Report</option>
+                            <option value="financial">Financial Report</option>
+                            <option value="audit">Audit Report</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Franchise</label>
+                        <select class="form-select" name="franchise">
+                            <option value="">All Franchises</option>
+                            {% for franchise in franchises %}
+                            <option value="{{ franchise.id }}">{{ franchise.business_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Region</label>
+                        <select class="form-select" name="region">
+                            <option value="">All Regions</option>
+                            {% for region in regions %}
+                            <option value="{{ region }}">{{ region }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Date Range</label>
+                        <select class="form-select" name="date_range" required>
+                            <option value="this_month">This Month</option>
+                            <option value="last_month">Last Month</option>
+                            <option value="this_quarter">This Quarter</option>
+                            <option value="last_quarter">Last Quarter</option>
+                            <option value="this_year">This Year</option>
+                            <option value="last_year">Last Year</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" class="form-control" name="start_date">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">End Date</label>
+                        <input type="date" class="form-control" name="end_date">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Include Sections</label>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="sections[]" 
+                                           value="summary" checked>
+                                    <label class="form-check-label">Executive Summary</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="sections[]" 
+                                           value="metrics" checked>
+                                    <label class="form-check-label">Key Metrics</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="sections[]" 
+                                           value="charts" checked>
+                                    <label class="form-check-label">Charts & Graphs</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="sections[]" 
+                                           value="recommendations">
+                                    <label class="form-check-label">Recommendations</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Format</label>
+                        <div class="row g-3">
+                            <div class="col-auto">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="format" 
+                                           value="pdf" checked>
+                                    <label class="form-check-label">PDF</label>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="format" 
+                                           value="excel">
+                                    <label class="form-check-label">Excel</label>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="format" 
+                                           value="word">
+                                    <label class="form-check-label">Word</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Generate Report</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Recent Reports -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Recent Reports</h5>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown">
+                    Filter by Type
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#">All Reports</a></li>
+                    <li><a class="dropdown-item" href="#">Performance Reports</a></li>
+                    <li><a class="dropdown-item" href="#">Compliance Reports</a></li>
+                    <li><a class="dropdown-item" href="#">Financial Reports</a></li>
+                    <li><a class="dropdown-item" href="#">Audit Reports</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Report Name</th>
+                            <th>Type</th>
+                            <th>Generated For</th>
+                            <th>Date Range</th>
+                            <th>Generated By</th>
+                            <th>Generated On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in recent_reports %}
+                        <tr>
+                            <td>{{ report.name }}</td>
+                            <td>
+                                <span class="badge bg-{{ 
+                                    'primary' if report.type == 'performance'
+                                    else 'success' if report.type == 'compliance'
+                                    else 'info' if report.type == 'financial'
+                                    else 'warning' }}">
+                                    {{ report.type }}
+                                </span>
+                            </td>
+                            <td>
+                                {{ report.franchise.business_name if report.franchise else 'All Franchises' }}
+                            </td>
+                            <td>{{ report.date_range }}</td>
+                            <td>{{ report.generated_by }}</td>
+                            <td>{{ report.generated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('franchise.download_report', report_id=report.id) }}" 
+                                       class="btn btn-sm btn-primary">
+                                        Download
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split" 
+                                            data-bs-toggle="dropdown"></button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="#" data-bs-toggle="modal" 
+                                               data-bs-target="#shareModal{{ report.id }}">
+                                                <i class="bi bi-share me-2"></i> Share
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <form action="{{ url_for('franchise.delete_report', report_id=report.id) }}" 
+                                                  method="POST" class="d-inline">
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="bi bi-trash me-2"></i> Delete
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination.pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+                        <a class="page-link" href="{{ url_for('franchise.reports', page=pagination.prev_num, **request.args) }}">Previous</a>
+                    </li>
+                    {% for page in pagination.iter_pages() %}
+                        {% if page %}
+                            <li class="page-item {{ 'active' if page == pagination.page }}">
+                                <a class="page-link" href="{{ url_for('franchise.reports', page=page, **request.args) }}">{{ page }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+                        <a class="page-link" href="{{ url_for('franchise.reports', page=pagination.next_num, **request.args) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Share Report Modal -->
+{% for report in recent_reports %}
+<div class="modal fade" id="shareModal{{ report.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Share Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('franchise.share_report', report_id=report.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Email Addresses</label>
+                        <textarea class="form-control" name="emails" rows="3" 
+                                 placeholder="Enter email addresses separated by commas" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Message (Optional)</label>
+                        <textarea class="form-control" name="message" rows="3"></textarea>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="notify" checked>
+                        <label class="form-check-label">
+                            Notify me when recipients view the report
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Share Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Date Range Handling
+    const dateRange = document.querySelector('select[name="date_range"]');
+    const startDate = document.querySelector('input[name="start_date"]');
+    const endDate = document.querySelector('input[name="end_date"]');
+
+    function toggleCustomDates() {
+        const isCustom = dateRange.value === 'custom';
+        startDate.required = isCustom;
+        endDate.required = isCustom;
+        startDate.parentElement.style.display = isCustom ? 'block' : 'none';
+        endDate.parentElement.style.display = isCustom ? 'block' : 'none';
+    }
+
+    dateRange.addEventListener('change', toggleCustomDates);
+    toggleCustomDates();
+});
+</script>
+{% endblock %}
+{% endblock %}

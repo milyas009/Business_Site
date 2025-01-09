@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+{% block title %}System Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Settings Navigation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <ul class="nav nav-pills" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#general">
+                                <i class="bi bi-gear me-2"></i>General
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#security">
+                                <i class="bi bi-shield-lock me-2"></i>Security
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#email">
+                                <i class="bi bi-envelope me-2"></i>Email
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#notifications">
+                                <i class="bi bi-bell me-2"></i>Notifications
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#backup">
+                                <i class="bi bi-cloud-arrow-up me-2"></i>Backup
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Content -->
+    <div class="tab-content">
+        <!-- General Settings -->
+        <div class="tab-pane fade show active" id="general">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">General Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('admin.update_general_settings') }}" method="POST">
+                        <div class="mb-4">
+                            <h6>Site Information</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Site Name</label>
+                                    <input type="text" class="form-control" name="site_name" 
+                                           value="{{ settings.site_name }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Site URL</label>
+                                    <input type="url" class="form-control" name="site_url" 
+                                           value="{{ settings.site_url }}" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Site Description</label>
+                                    <textarea class="form-control" name="site_description" 
+                                              rows="3">{{ settings.site_description }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6>Regional Settings</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Timezone</label>
+                                    <select class="form-select" name="timezone" required>
+                                        {% for tz in timezones %}
+                                        <option value="{{ tz }}" {% if settings.timezone == tz %}selected{% endif %}>
+                                            {{ tz }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Date Format</label>
+                                    <select class="form-select" name="date_format" required>
+                                        <option value="YYYY-MM-DD" {% if settings.date_format == 'YYYY-MM-DD' %}selected{% endif %}>
+                                            YYYY-MM-DD
+                                        </option>
+                                        <option value="MM/DD/YYYY" {% if settings.date_format == 'MM/DD/YYYY' %}selected{% endif %}>
+                                            MM/DD/YYYY
+                                        </option>
+                                        <option value="DD/MM/YYYY" {% if settings.date_format == 'DD/MM/YYYY' %}selected{% endif %}>
+                                            DD/MM/YYYY
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Time Format</label>
+                                    <select class="form-select" name="time_format" required>
+                                        <option value="24" {% if settings.time_format == '24' %}selected{% endif %}>24 Hour</option>
+                                        <option value="12" {% if settings.time_format == '12' %}selected{% endif %}>12 Hour</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6>System Performance</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Items Per Page</label>
+                                    <input type="number" class="form-control" name="items_per_page" 
+                                           value="{{ settings.items_per_page }}" min="10" max="100" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Session Timeout (minutes)</label>
+                                    <input type="number" class="form-control" name="session_timeout" 
+                                           value="{{ settings.session_timeout }}" min="5" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Settings -->
+        <div class="tab-pane fade" id="security">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Security Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('admin.update_security_settings') }}" method="POST">
+                        <div class="mb-4">
+                            <h6>Password Policy</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Minimum Password Length</label>
+                                    <input type="number" class="form-control" name="min_password_length" 
+                                           value="{{ settings.min_password_length }}" min="8" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Password Expiry (days)</label>
+                                    <input type="number" class="form-control" name="password_expiry" 
+                                           value="{{ settings.password_expiry }}" min="0">
+                                    <small class="form-text">Set to 0 for no expiry</small>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="require_special_char" 
+                                               {% if settings.require_special_char %}checked{% endif %}>
+                                        <label class="form-check-label">Require special characters</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="require_number" 
+                                               {% if settings.require_number %}checked{% endif %}>
+                                        <label class="form-check-label">Require numbers</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="require_uppercase" 
+                                               {% if settings.require_uppercase %}checked{% endif %}>
+                                        <label class="form-check-label">Require uppercase letters</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6>Login Security</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Failed Login Attempts</label>
+                                    <input type="number" class="form-control" name="max_login_attempts" 
+                                           value="{{ settings.max_login_attempts }}" min="3" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Lockout Duration (minutes)</label>
+                                    <input type="number" class="form-control" name="lockout_duration" 
+                                           value="{{ settings.lockout_duration }}" min="5" required>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="enable_2fa" 
+                                               {% if settings.enable_2fa %}checked{% endif %}>
+                                        <label class="form-check-label">Enable Two-Factor Authentication</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6>Session Security</h6>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="force_ssl" 
+                                               {% if settings.force_ssl %}checked{% endif %}>
+                                        <label class="form-check-label">Force SSL/HTTPS</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="secure_cookies" 
+                                               {% if settings.secure_cookies %}checked{% endif %}>
+                                        <label class="form-check-label">Use secure cookies</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Settings -->
+        <div class="tab-pane fade" id="email">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Email Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('admin.update_email_settings') }}" method="POST">
+                        <div class="mb-4">
+                            <h6>SMTP Configuration</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">SMTP Host</label>
+                                    <input type="text" class="form-control" name="smtp_host" 
+                                           value="{{ settings.smtp_host }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">SMTP Port</label>
+                                    <input type="number" class="form-control" name="smtp_port" 
+                                           value="{{ settings.smtp_port }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">SMTP Username</label>
+                                    <input type="text" class="form-control" name="smtp_username" 
+                                           value="{{ settings.smtp_username }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">SMTP Password</label>
+                                    <input type="password" class="form-control" name="smtp_password" 
+                                           value="{{ settings.smtp_password }}" required>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="smtp_ssl" 
+                                               {% if settings.smtp_ssl %}checked{% endif %}>
+                                        <label class="form-check-label">Use SSL/TLS</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6>Email Templates</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">From Name</label>
+                                    <input type="text" class="form-control" name="email_from_name" 
+                                           value="{{ settings.email_from_name }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">From Email</label>
+                                    <input type="email" class="form-control" name="email_from_address" 
+                                           value="{{ settings.email_from_address }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary me-2" data-bs-toggle="modal" 
+                                    data-bs-target="#testEmailModal">
+                                Test Email
+                            </button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Settings -->
+        <div class="tab-pane fade" id="notifications">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Notification Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('admin.update_notification_settings') }}" method="POST">
+                        <div class="mb-4">
+                            <h6>System Notifications</h6>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="notify_user_login" 
+                                               {% if settings.notify_user_login %}checked{% endif %}>
+                                        <label class="form-check-label">User Login Attempts</label>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="notify_user_registration" 
+                                               {% if settings.notify_user_registration %}checked{% endif %}>
+                                        <label class="form-check-label">New User Registrations</label>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="notify_system_updates" 
+                                               {% if settings.notify_system_updates %}checked{% endif %}>
+                                        <label class="form-check-label">System Updates</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6>Email Notifications</h6>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="email_on_error" 
+                                               {% if settings.email_on_error %}checked{% endif %}>
+                                        <label class="form-check-label">System Errors</label>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="email_on_backup" 
+                                               {% if settings.email_on_backup %}checked{% endif %}>
+                                        <label class="form-check-label">Backup Completion</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backup Settings -->
+        <div class="tab-pane fade" id="backup">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Backup Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('admin.update_backup_settings') }}" method="POST">
+                        <div class="mb-4">
+                            <h6>Automated Backups</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Backup Frequency</label>
+                                    <select class="form-select" name="backup_frequency" required>
+                                        <option value="daily" {% if settings.backup_frequency == 'daily' %}selected{% endif %}>Daily</option>
+                                        <option value="weekly" {% if settings.backup_frequency == 'weekly' %}selected{% endif %}>Weekly</option>
+                                        <option value="monthly" {% if settings.backup_frequency == 'monthly' %}selected{% endif %}>Monthly</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Retention Period (days)</label>
+                                    <input type="number" class="form-control" name="backup_retention" 
+                                           value="{{ settings.backup_retention }}" min="1" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6>Backup Storage</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Storage Type</label>
+                                    <select class="form-select" name="backup_storage" required>
+                                        <option value="local" {% if settings.backup_storage == 'local' %}selected{% endif %}>Local Storage</option>
+                                        <option value="s3" {% if settings.backup_storage == 's3' %}selected{% endif %}>Amazon S3</option>
+                                        <option value="gcloud" {% if settings.backup_storage == 'gcloud' %}selected{% endif %}>Google Cloud</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Backup Path</label>
+                                    <input type="text" class="form-control" name="backup_path" 
+                                           value="{{ settings.backup_path }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary me-2" data-bs-toggle="modal" 
+                                    data-bs-target="#backupNowModal">
+                                Backup Now
+                            </button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Email Modal -->
+<div class="modal fade" id="testEmailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Send Test Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.send_test_email') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Test Email Address</label>
+                        <input type="email" class="form-control" name="test_email" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Send Test Email</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Backup Now Modal -->
+<div class="modal fade" id="backupNowModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manual Backup</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.backup_now') }}" method="POST">
+                <div class="modal-body">
+                    <p>This will create an immediate backup of your system. Are you sure you want to proceed?</p>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="notify_completion" checked>
+                        <label class="form-check-label">
+                            Notify me when backup is complete
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Start Backup</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

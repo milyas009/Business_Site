@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+{% block title %}User Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Action Buttons -->
+    <div class="mb-4">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+            <i class="bi bi-person-plus"></i> Add User
+        </button>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importUsersModal">
+            <i class="bi bi-upload"></i> Import Users
+        </button>
+        <a href="{{ url_for('admin.export_users') }}" class="btn btn-outline-primary">
+            <i class="bi bi-download"></i> Export Users
+        </a>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#bulkActionModal">
+            <i class="bi bi-people"></i> Bulk Actions
+        </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form class="row g-3" method="GET">
+                <div class="col-md-3">
+                    <label class="form-label">Role</label>
+                    <select class="form-select" name="role">
+                        <option value="">All Roles</option>
+                        {% for role in roles %}
+                        <option value="{{ role }}" {% if request.args.get('role') == role %}selected{% endif %}>
+                            {{ role }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All Status</option>
+                        <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if request.args.get('status') == 'inactive' %}selected{% endif %}>Inactive</option>
+                        <option value="suspended" {% if request.args.get('status') == 'suspended' %}selected{% endif %}>Suspended</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Created Date</label>
+                    <select class="form-select" name="created_date">
+                        <option value="">All Time</option>
+                        <option value="today">Today</option>
+                        <option value="this_week">This Week</option>
+                        <option value="this_month">This Month</option>
+                        <option value="this_year">This Year</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="form-control" name="search" 
+                           value="{{ request.args.get('search', '') }}" placeholder="Search users...">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary">Clear Filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAll">
+                                </div>
+                            </th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Last Login</th>
+                            <th>Created On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>
+                                <div class="form-check">
+                                    <input class="form-check-input user-checkbox" type="checkbox" 
+                                           value="{{ user.id }}">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-sm me-2">
+                                        {% if user.avatar %}
+                                        <img src="{{ user.avatar }}" class="rounded-circle">
+                                        {% else %}
+                                        <div class="avatar-initial rounded-circle bg-{{ user.color }}">
+                                            {{ user.initials }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {{ user.name }}
+                                </div>
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <span class="badge bg-{{ user.role_color }}">{{ user.role }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 
+                                    'success' if user.status == 'active'
+                                    else 'warning' if user.status == 'suspended'
+                                    else 'danger' }}">
+                                    {{ user.status }}
+                                </span>
+                            </td>
+                            <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'Never' }}</td>
+                            <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-icon" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="#" data-bs-toggle="modal" 
+                                               data-bs-target="#editUserModal{{ user.id }}">
+                                                <i class="bi bi-pencil me-2"></i> Edit
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" data-bs-toggle="modal" 
+                                               data-bs-target="#resetPasswordModal{{ user.id }}">
+                                                <i class="bi bi-key me-2"></i> Reset Password
+                                            </a>
+                                        </li>
+                                        {% if user.status == 'active' %}
+                                        <li>
+                                            <form action="{{ url_for('admin.suspend_user', user_id=user.id) }}" 
+                                                  method="POST" class="d-inline">
+                                                <button type="submit" class="dropdown-item text-warning">
+                                                    <i class="bi bi-pause-circle me-2"></i> Suspend
+                                                </button>
+                                            </form>
+                                        </li>
+                                        {% else %}
+                                        <li>
+                                            <form action="{{ url_for('admin.activate_user', user_id=user.id) }}" 
+                                                  method="POST" class="d-inline">
+                                                <button type="submit" class="dropdown-item text-success">
+                                                    <i class="bi bi-play-circle me-2"></i> Activate
+                                                </button>
+                                            </form>
+                                        </li>
+                                        {% endif %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form action="{{ url_for('admin.delete_user', user_id=user.id) }}" 
+                                                  method="POST" class="d-inline">
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="bi bi-trash me-2"></i> Delete
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination.pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+                        <a class="page-link" href="{{ url_for('admin.users', page=pagination.prev_num, **request.args) }}">Previous</a>
+                    </li>
+                    {% for page in pagination.iter_pages() %}
+                        {% if page %}
+                            <li class="page-item {{ 'active' if page == pagination.page }}">
+                                <a class="page-link" href="{{ url_for('admin.users', page=page, **request.args) }}">{{ page }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+                        <a class="page-link" href="{{ url_for('admin.users', page=pagination.next_num, **request.args) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.add_user') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select class="form-select" name="role" required>
+                            {% for role in roles %}
+                            <option value="{{ role }}">{{ role }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" name="confirm_password" required>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="send_welcome_email" checked>
+                        <label class="form-check-label">
+                            Send welcome email with login credentials
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Import Users Modal -->
+<div class="modal fade" id="importUsersModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Users</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.import_users') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">CSV File</label>
+                        <input type="file" class="form-control" name="file" accept=".csv" required>
+                    </div>
+                    <div class="form-text">
+                        Download the <a href="{{ url_for('admin.download_user_template') }}">template file</a> 
+                        to see the required format.
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="send_welcome_emails" checked>
+                        <label class="form-check-label">
+                            Send welcome emails to imported users
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Import Users</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Action Modal -->
+<div class="modal fade" id="bulkActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bulk Actions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.bulk_action') }}" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="user_ids" id="selectedUserIds">
+                    <div class="mb-3">
+                        <label class="form-label">Action</label>
+                        <select class="form-select" name="action" required>
+                            <option value="">Select Action</option>
+                            <option value="activate">Activate Users</option>
+                            <option value="suspend">Suspend Users</option>
+                            <option value="delete">Delete Users</option>
+                            <option value="change_role">Change Role</option>
+                        </select>
+                    </div>
+                    <div id="roleSelect" class="mb-3" style="display: none;">
+                        <label class="form-label">New Role</label>
+                        <select class="form-select" name="new_role">
+                            {% for role in roles %}
+                            <option value="{{ role }}">{{ role }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modals -->
+{% for user in users %}
+<div class="modal fade" id="editUserModal{{ user.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.edit_user', user_id=user.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-control" name="name" value="{{ user.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select class="form-select" name="role" required>
+                            {% for role in roles %}
+                            <option value="{{ role }}" {% if user.role == role %}selected{% endif %}>
+                                {{ role }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal fade" id="resetPasswordModal{{ user.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reset Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.reset_password', user_id=user.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" name="confirm_password" required>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="force_change" checked>
+                        <label class="form-check-label">
+                            Force password change on next login
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="send_email" checked>
+                        <label class="form-check-label">
+                            Send password reset email to user
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Reset Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Select All Checkbox
+    const selectAll = document.getElementById('selectAll');
+    const userCheckboxes = document.getElementsByClassName('user-checkbox');
+
+    selectAll.addEventListener('change', function() {
+        Array.from(userCheckboxes).forEach(checkbox => {
+            checkbox.checked = selectAll.checked;
+        });
+        updateSelectedUsers();
+    });
+
+    Array.from(userCheckboxes).forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            selectAll.checked = Array.from(userCheckboxes).every(cb => cb.checked);
+            updateSelectedUsers();
+        });
+    });
+
+    // Update hidden input with selected user IDs
+    function updateSelectedUsers() {
+        const selectedIds = Array.from(userCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        document.getElementById('selectedUserIds').value = JSON.stringify(selectedIds);
+    }
+
+    // Show/hide role select based on action
+    const actionSelect = document.querySelector('select[name="action"]');
+    const roleSelect = document.getElementById('roleSelect');
+
+    actionSelect.addEventListener('change', function() {
+        roleSelect.style.display = this.value === 'change_role' ? 'block' : 'none';
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

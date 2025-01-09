@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('products') }}">Products</a></li>
+            <li class="breadcrumb-item active">{{ product.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Product Images -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <img src="{{ url_for('static', filename='images/products/' + product.product_id + '.jpg') }}" 
+                     class="card-img-top" alt="{{ product.name }}"
+                     onerror="this.src='{{ url_for('static', filename='images/product-default.jpg') }}"
+                     style="height: 400px; object-fit: cover;">
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-3">
+                            <img src="{{ url_for('static', filename='images/products/' + product.product_id + '_1.jpg') }}" 
+                                 class="img-thumbnail" alt="{{ product.name }}"
+                                 onerror="this.src='{{ url_for('static', filename='images/product-default.jpg') }}"
+                                 style="height: 80px; object-fit: cover;">
+                        </div>
+                        <div class="col-3">
+                            <img src="{{ url_for('static', filename='images/products/' + product.product_id + '_2.jpg') }}" 
+                                 class="img-thumbnail" alt="{{ product.name }}"
+                                 onerror="this.src='{{ url_for('static', filename='images/product-default.jpg') }}"
+                                 style="height: 80px; object-fit: cover;">
+                        </div>
+                        <div class="col-3">
+                            <img src="{{ url_for('static', filename='images/products/' + product.product_id + '_3.jpg') }}" 
+                                 class="img-thumbnail" alt="{{ product.name }}"
+                                 onerror="this.src='{{ url_for('static', filename='images/product-default.jpg') }}"
+                                 style="height: 80px; object-fit: cover;">
+                        </div>
+                        <div class="col-3">
+                            <img src="{{ url_for('static', filename='images/products/' + product.product_id + '_4.jpg') }}" 
+                                 class="img-thumbnail" alt="{{ product.name }}"
+                                 onerror="this.src='{{ url_for('static', filename='images/product-default.jpg') }}"
+                                 style="height: 80px; object-fit: cover;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h1 class="h2 mb-2">{{ product.name }}</h1>
+                    <p class="text-muted mb-4">{{ product.description }}</p>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <div class="p-3 border rounded">
+                                <small class="text-muted d-block">Minimum Investment</small>
+                                <span class="h4 mb-0">${{ "%.2f"|format(product.min_investment) }}</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 border rounded">
+                                <small class="text-muted d-block">Expected ROI</small>
+                                <span class="h4 mb-0 text-success">{{ product.expected_roi }}%</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 border rounded">
+                                <small class="text-muted d-block">Current Stock</small>
+                                <span class="h4 mb-0">{{ product.stock_level }} units</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 border rounded">
+                                <small class="text-muted d-block">Status</small>
+                                <span class="h4 mb-0">
+                                    <span class="badge bg-{{ 'primary' if product.status == 'funding' else 'secondary' }}">
+                                        {{ product.status.title() }}
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if product.status == 'funding' %}
+                    <form method="POST" action="{{ url_for('invest', product_id=product.product_id) }}" class="mb-4">
+                        <div class="mb-3">
+                            <label class="form-label">Investment Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="amount" class="form-control" 
+                                       min="{{ product.min_investment }}" step="100"
+                                       value="{{ product.min_investment }}">
+                            </div>
+                            <small class="text-muted">Minimum investment: ${{ "%.2f"|format(product.min_investment) }}</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100">Invest Now</button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Product Details -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">Product Details</h5>
+                        <div class="table-responsive">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="text-muted" style="width: 150px;">Category</td>
+                                    <td>{{ product.category.title() }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Retail Price</td>
+                                    <td>${{ "%.2f"|format(product.price) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Listed Date</td>
+                                    <td>{{ product.created_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Investment Progress -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">Investment Progress</h5>
+                        <div class="progress mb-2" style="height: 20px;">
+                            <div class="progress-bar bg-success" style="width: 65%;">65%</div>
+                        </div>
+                        <small class="text-muted">$65,000 raised of $100,000 goal</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Market Analysis -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="mb-3">Market Analysis</h5>
+                    <div class="mb-4">
+                        <canvas id="marketTrendChart"></canvas>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Market Size</small>
+                            <span class="fw-bold">$50M</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Growth Rate</small>
+                            <span class="fw-bold text-success">+15% YoY</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Competition</small>
+                            <span class="fw-bold">Medium</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Risk Level</small>
+                            <span class="fw-bold">Moderate</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Market Trend Chart
+    const ctx = document.getElementById('marketTrendChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Market Trend',
+                data: [12, 19, 15, 25, 22, 30],
+                borderColor: '#4299e1',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

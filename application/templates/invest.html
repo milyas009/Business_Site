@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="card-title mb-4">Invest in {{ product.name }}</h2>
+                    
+                    <!-- Product Summary -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <img src="{{ url_for('static', filename='images/products/' + product.id|string + '.jpg') }}"
+                                 class="img-fluid rounded"
+                                 alt="{{ product.name }}"
+                                 onerror="this.src='{{ url_for('static', filename='images/product-default.jpg') }}'">
+                        </div>
+                        <div class="col-md-8">
+                            <h5 class="mb-3">Investment Details</h5>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Category</small>
+                                    <span class="fw-medium">{{ product.category.title() }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Status</small>
+                                    <span class="badge bg-primary">{{ product.status.title() }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Min Investment</small>
+                                    <span class="fw-bold">${{ "%.2f"|format(product.min_investment) }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Expected ROI</small>
+                                    <span class="fw-bold text-success">{{ product.expected_roi }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Investment Form -->
+                    <form method="POST" class="needs-validation" novalidate>
+                        <div class="mb-4">
+                            <label for="amount" class="form-label">Investment Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="amount" 
+                                       name="amount"
+                                       min="{{ product.min_investment }}"
+                                       step="100"
+                                       required>
+                            </div>
+                            <div class="form-text">Minimum investment: ${{ "%.2f"|format(product.min_investment) }}</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>Investment Terms</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="bi bi-check-circle-fill text-success me-2"></i>Expected ROI: {{ product.expected_roi }}%</li>
+                                <li><i class="bi bi-check-circle-fill text-success me-2"></i>Investment Period: 12 months</li>
+                                <li><i class="bi bi-check-circle-fill text-success me-2"></i>Monthly performance reports</li>
+                                <li><i class="bi bi-check-circle-fill text-success me-2"></i>Exit options available after 6 months</li>
+                            </ul>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="terms" required>
+                            <label class="form-check-label" for="terms">
+                                I agree to the investment terms and conditions
+                            </label>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Confirm Investment</button>
+                            <a href="{{ url_for('main.investment_opportunities') }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form Validation Script -->
+<script>
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+</script>
+{% endblock %}
