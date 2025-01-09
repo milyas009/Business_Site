@@ -72,8 +72,44 @@
     </div>
 </section>
 
+<!-- Featured Franchises Section -->
+<section class="featured-franchises py-5 bg-light">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <h2 class="display-6 fw-bold">Featured Franchise Success Stories</h2>
+            <p class="text-muted">Learn from successful franchise owners in our network</p>
+        </div>
+        <div class="row g-4">
+            {% for franchise in featured_franchises %}
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='images/franchises/' + franchise.id + '.jpg') }}" 
+                             class="card-img-top" alt="{{ franchise.business_name }}"
+                             onerror="this.src='{{ url_for('static', filename='images/franchise-default.jpg') }}'"
+                             style="height: 200px; object-fit: cover;">
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ franchise.business_name }}</h5>
+                        <p class="text-muted mb-2"><i class="bi bi-geo-alt"></i> {{ franchise.location }}</p>
+                        <p class="card-text">{{ franchise.success_story[:150] }}...</p>
+                    </div>
+                    <div class="card-footer bg-white border-top-0">
+                        <a href="{{ url_for('main.franchise') }}#franchise-{{ franchise.id }}" 
+                           class="btn btn-outline-primary w-100">Read Full Story</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('main.franchise') }}" class="btn btn-primary">View All Success Stories</a>
+        </div>
+    </div>
+</section>
+
 <!-- How It Works Section -->
-<section class="business-model py-5 bg-light">
+<section class="business-model py-5">
     <div class="container">
         <div class="section-header text-center mb-5">
             <h2 class="display-6 fw-bold">How It Works</h2>
@@ -118,7 +154,7 @@
 </section>
 
 <!-- Call to Action -->
-<section class="cta py-5">
+<section class="cta py-5 bg-light">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-10 col-lg-8 text-center">
