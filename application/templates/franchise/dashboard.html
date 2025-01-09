@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+{% block title %}Franchise Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Active Franchises</h6>
+                            <h4 class="mb-0">{{ stats.active_franchises }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-primary-subtle">
+                            <i class="bi bi-shop fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Pending Applications</h6>
+                            <h4 class="mb-0">{{ stats.pending_applications }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-warning-subtle">
+                            <i class="bi bi-file-earmark-text fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Revenue</h6>
+                            <h4 class="mb-0">${{ "%.2f"|format(stats.total_revenue) }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-success-subtle">
+                            <i class="bi bi-currency-dollar fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Average Rating</h6>
+                            <h4 class="mb-0">{{ "%.1f"|format(stats.average_rating) }}/5.0</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-info-subtle">
+                            <i class="bi bi-star fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Applications -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Applications</h5>
+                    <a href="{{ url_for('franchise.applications') }}" class="btn btn-sm btn-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Applicant</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Applied Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for application in recent_applications %}
+                                <tr>
+                                    <td>
+                                        {{ application.applicant_name }}<br>
+                                        <small class="text-muted">{{ application.email }}</small>
+                                    </td>
+                                    <td>{{ application.location }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 
+                                            'warning' if application.status == 'pending'
+                                            else 'info' if application.status == 'review'
+                                            else 'success' if application.status == 'approved'
+                                            else 'danger' }}">
+                                            {{ application.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ application.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" 
+                                                data-bs-target="#applicationModal{{ application.id }}">
+                                            Review
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Overview -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Performance Overview</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="performanceChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Top Performing Franchises -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Top Performing Franchises</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                                data-bs-toggle="dropdown">
+                            This Month
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">This Week</a></li>
+                            <li><a class="dropdown-item" href="#">This Month</a></li>
+                            <li><a class="dropdown-item" href="#">This Quarter</a></li>
+                            <li><a class="dropdown-item" href="#">This Year</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Franchise</th>
+                                    <th>Revenue</th>
+                                    <th>Growth</th>
+                                    <th>Rating</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for franchise in top_franchises %}
+                                <tr>
+                                    <td>
+                                        {{ franchise.business_name }}<br>
+                                        <small class="text-muted">{{ franchise.location }}</small>
+                                    </td>
+                                    <td>${{ "%.2f"|format(franchise.revenue) }}</td>
+                                    <td>
+                                        <span class="text-{{ 'success' if franchise.growth > 0 else 'danger' }}">
+                                            {{ "%.1f"|format(franchise.growth) }}%
+                                            <i class="bi bi-arrow-{{ 'up' if franchise.growth > 0 else 'down' }}"></i>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {{ "%.1f"|format(franchise.rating) }}
+                                            <div class="ms-2">
+                                                {% for i in range(5) %}
+                                                <i class="bi bi-star{{ '-fill' if i < franchise.rating|int else '' }} text-warning"></i>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activities -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Activities</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for activity in recent_activities %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon bg-{{ activity.type_color }}">
+                                <i class="bi bi-{{ activity.icon }}"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ activity.title }}</strong>
+                                    <small class="text-muted">{{ activity.timestamp.strftime('%H:%M') }}</small>
+                                </div>
+                                <p class="mb-0">{{ activity.description }}</p>
+                                {% if activity.details %}
+                                <small class="text-muted">{{ activity.details }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Application Review Modal -->
+{% for application in recent_applications %}
+<div class="modal fade" id="applicationModal{{ application.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Application Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6>Applicant Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td class="text-muted">Name</td>
+                                <td>{{ application.applicant_name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Email</td>
+                                <td>{{ application.email }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Phone</td>
+                                <td>{{ application.phone }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Location</td>
+                                <td>{{ application.location }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Business Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td class="text-muted">Experience</td>
+                                <td>{{ application.business_experience }} years</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Investment</td>
+                                <td>${{ "%.2f"|format(application.investment_amount) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Timeline</td>
+                                <td>{{ application.timeline }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-12">
+                        <h6>Additional Information</h6>
+                        <p>{{ application.additional_info }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                {% if application.status == 'pending' %}
+                <form action="{{ url_for('franchise.review_application', application_id=application.id) }}" 
+                      method="POST" class="d-inline">
+                    <input type="hidden" name="status" value="review">
+                    <button type="submit" class="btn btn-primary">Start Review</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Performance Chart
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ performance_data.labels|tojson }},
+            datasets: [{
+                label: 'Revenue',
+                data: {{ performance_data.revenue|tojson }},
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }, {
+                label: 'Growth',
+                data: {{ performance_data.growth|tojson }},
+                borderColor: 'rgb(255, 99, 132)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

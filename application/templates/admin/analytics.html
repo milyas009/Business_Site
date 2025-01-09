@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Time Range Selector -->
+    <div class="mb-4">
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-primary active" data-range="today">Today</button>
+            <button type="button" class="btn btn-outline-primary" data-range="week">This Week</button>
+            <button type="button" class="btn btn-outline-primary" data-range="month">This Month</button>
+            <button type="button" class="btn btn-outline-primary" data-range="year">This Year</button>
+        </div>
+        <button class="btn btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#customRangeModal">
+            Custom Range
+        </button>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Users</h6>
+                            <h4 class="mb-0">{{ stats.total_users }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-primary-subtle">
+                            <i class="bi bi-people fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Active Franchises</h6>
+                            <h4 class="mb-0">{{ stats.active_franchises }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-success-subtle">
+                            <i class="bi bi-shop fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Revenue</h6>
+                            <h4 class="mb-0">${{ "{:,.2f}".format(stats.total_revenue) }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-warning-subtle">
+                            <i class="bi bi-currency-dollar fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Average Rating</h6>
+                            <h4 class="mb-0">{{ "%.1f"|format(stats.avg_rating or 0) }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-info-subtle">
+                            <i class="bi bi-star fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Revenue Chart -->
+        <div class="col-lg-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Revenue Overview</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Demographics -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">User Demographics</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="demographicsChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Regional Performance -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Regional Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div id="regionalMap" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Growth Trends -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Growth Trends</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="growthChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Range Modal -->
+<div class="modal fade" id="customRangeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Select Date Range</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="dateRangeForm">
+                    <div class="mb-3">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" class="form-control" name="start_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">End Date</label>
+                        <input type="date" class="form-control" name="end_date" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="applyDateRange">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    const revenueChart = new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: {{ revenue_data.labels | tojson }},
+            datasets: [{
+                label: 'Revenue',
+                data: {{ revenue_data.values | tojson }},
+                borderColor: '#0d6efd',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // Demographics Chart
+    const demographicsCtx = document.getElementById('demographicsChart').getContext('2d');
+    const demographicsChart = new Chart(demographicsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ demographics.labels | tojson }},
+            datasets: [{
+                data: {{ demographics.values | tojson }},
+                backgroundColor: [
+                    '#0d6efd',
+                    '#198754',
+                    '#dc3545',
+                    '#ffc107'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // Growth Chart
+    const growthCtx = document.getElementById('growthChart').getContext('2d');
+    const growthChart = new Chart(growthCtx, {
+        type: 'line',
+        data: {
+            labels: {{ growth_data.labels | tojson }},
+            datasets: [{
+                label: 'User Growth',
+                data: {{ growth_data.user_growth | tojson }},
+                borderColor: '#0d6efd',
+                tension: 0.1
+            }, {
+                label: 'Revenue Growth',
+                data: {{ growth_data.revenue_growth | tojson }},
+                borderColor: '#198754',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+});
+</script>
+{% endblock %}

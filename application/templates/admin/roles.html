@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}Role Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Action Buttons -->
+    <div class="mb-4">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addRoleModal">
+            <i class="bi bi-plus-lg"></i> Add Role
+        </button>
+    </div>
+
+    <!-- Roles List -->
+    <div class="row">
+        {% for role in roles %}
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{{ role.name }}</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-link" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="#" data-bs-toggle="modal" 
+                                   data-bs-target="#editRoleModal{{ role.id }}">
+                                    <i class="bi bi-pencil me-2"></i> Edit Role
+                                </a>
+                            </li>
+                            {% if not role.is_system_role %}
+                            <li>
+                                <form action="{{ url_for('admin.delete_role', role_id=role.id) }}" 
+                                      method="POST" class="d-inline">
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-trash me-2"></i> Delete Role
+                                    </button>
+                                </form>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6>Description</h6>
+                        <p class="text-muted">{{ role.description }}</p>
+                    </div>
+                    <div class="mb-4">
+                        <h6>Users with this role</h6>
+                        <h4>{{ role.user_count }}</h4>
+                    </div>
+                    <div>
+                        <h6>Permissions</h6>
+                        <div class="row g-2">
+                            {% for permission in role.permissions %}
+                            <div class="col-auto">
+                                <span class="badge bg-primary">{{ permission }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Role Modal -->
+<div class="modal fade" id="addRoleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.add_role') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Role Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <h6>Permissions</h6>
+                        <div class="row g-3">
+                            {% for category, perms in permissions.items() %}
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header py-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input category-check" type="checkbox" 
+                                                   data-category="{{ category }}">
+                                            <label class="form-check-label">
+                                                <strong>{{ category }}</strong>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        {% for perm in perms %}
+                                        <div class="form-check">
+                                            <input class="form-check-input perm-check" type="checkbox" 
+                                                   name="permissions[]" value="{{ perm.value }}" 
+                                                   data-category="{{ category }}">
+                                            <label class="form-check-label">
+                                                {{ perm.label }}
+                                            </label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Role</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Role Modals -->
+{% for role in roles %}
+<div class="modal fade" id="editRoleModal{{ role.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.edit_role', role_id=role.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Role Name</label>
+                        <input type="text" class="form-control" name="name" value="{{ role.name }}" 
+                               {% if role.is_system_role %}readonly{% endif %} required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3">{{ role.description }}</textarea>
+                    </div>
+                    <div class="mb-4">
+                        <h6>Permissions</h6>
+                        <div class="row g-3">
+                            {% for category, perms in permissions.items() %}
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header py-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input category-check" type="checkbox" 
+                                                   data-category="{{ category }}">
+                                            <label class="form-check-label">
+                                                <strong>{{ category }}</strong>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        {% for perm in perms %}
+                                        <div class="form-check">
+                                            <input class="form-check-input perm-check" type="checkbox" 
+                                                   name="permissions[]" value="{{ perm.value }}" 
+                                                   data-category="{{ category }}"
+                                                   {% if perm.value in role.permissions %}checked{% endif %}>
+                                            <label class="form-check-label">
+                                                {{ perm.label }}
+                                            </label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle category checkboxes
+    document.querySelectorAll('.category-check').forEach(categoryCheck => {
+        categoryCheck.addEventListener('change', function() {
+            const category = this.dataset.category;
+            const permChecks = document.querySelectorAll(`.perm-check[data-category="${category}"]`);
+            permChecks.forEach(check => check.checked = this.checked);
+        });
+    });
+
+    // Update category checkbox state based on permissions
+    function updateCategoryChecks() {
+        document.querySelectorAll('.category-check').forEach(categoryCheck => {
+            const category = categoryCheck.dataset.category;
+            const permChecks = document.querySelectorAll(`.perm-check[data-category="${category}"]`);
+            const allChecked = Array.from(permChecks).every(check => check.checked);
+            const someChecked = Array.from(permChecks).some(check => check.checked);
+            
+            categoryCheck.checked = allChecked;
+            categoryCheck.indeterminate = someChecked && !allChecked;
+        });
+    }
+
+    // Handle permission checkboxes
+    document.querySelectorAll('.perm-check').forEach(permCheck => {
+        permCheck.addEventListener('change', updateCategoryChecks);
+    });
+
+    // Initial state
+    updateCategoryChecks();
+});
+</script>
+{% endblock %}
+{% endblock %}

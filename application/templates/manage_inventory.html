@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3">Manage Inventory</h1>
+            <p class="text-muted">{{ franchise.name }} - {{ franchise.location }}</p>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                <i class="bi bi-plus-lg me-2"></i>Add Product
+            </button>
+        </div>
+    </div>
+
+    <!-- Inventory Overview Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Total Products</h6>
+                    <h3 class="mb-0">{{ inventory|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Low Stock Items</h6>
+                    <h3 class="mb-0 text-warning">
+                        {{ inventory|selectattr('quantity', 'le', 5)|list|length }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Out of Stock</h6>
+                    <h3 class="mb-0 text-danger">
+                        {{ inventory|selectattr('quantity', 'eq', 0)|list|length }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Total Stock Value</h6>
+                    <h3 class="mb-0">
+                        ${{ "%.2f"|format(inventory|sum(attribute='product.price')) }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="mb-0">Current Inventory</h5>
+                </div>
+                <div class="col-auto">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Search products...">
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Stock Level</th>
+                            <th>Unit Price</th>
+                            <th>Total Value</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inventory %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ url_for('static', filename='images/products/' + item.product.product_id + '.jpg') }}"
+                                         alt="{{ item.product.name }}"
+                                         class="me-2"
+                                         style="width: 40px; height: 40px; object-fit: cover;"
+                                         onerror="this.src='{{ url_for('static', filename='images/product-default.jpg') }}'">
+                                    <div>
+                                        <h6 class="mb-0">{{ item.product.name }}</h6>
+                                        <small class="text-muted">ID: {{ item.product.product_id }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ item.product.category.title() }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if item.quantity > 20 else 'warning' if item.quantity > 5 else 'danger' }}">
+                                    {{ item.quantity }} units
+                                </span>
+                            </td>
+                            <td>${{ "%.2f"|format(item.product.price) }}</td>
+                            <td>${{ "%.2f"|format(item.quantity * item.product.price) }}</td>
+                            <td>{{ item.last_updated.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1" 
+                                        onclick="openUpdateModal('{{ item.product.product_id }}', {{ item.quantity }})">
+                                    Update
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger"
+                                        onclick="removeProduct('{{ item.product.product_id }}')">
+                                    Remove
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" id="addProductForm">
+                    <div class="mb-3">
+                        <label class="form-label">Select Product</label>
+                        <select name="product_id" class="form-select" required>
+                            <option value="">Choose a product...</option>
+                            {% for product in products %}
+                            <option value="{{ product.product_id }}">{{ product.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Initial Quantity</label>
+                        <input type="number" name="quantity" class="form-control" required min="1">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Product</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Stock Modal -->
+<div class="modal fade" id="updateStockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Stock Level</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" id="updateStockForm">
+                    <input type="hidden" name="product_id" id="updateProductId">
+                    <div class="mb-3">
+                        <label class="form-label">New Quantity</label>
+                        <input type="number" name="quantity" id="updateQuantity" class="form-control" required min="0">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Stock</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openUpdateModal(productId, currentQuantity) {
+    document.getElementById('updateProductId').value = productId;
+    document.getElementById('updateQuantity').value = currentQuantity;
+    new bootstrap.Modal(document.getElementById('updateStockModal')).show();
+}
+
+function removeProduct(productId) {
+    if (confirm('Are you sure you want to remove this product from inventory?')) {
+        // Submit form to remove product
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("manage_inventory") }}';
+        
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'remove_product';
+        input.value = productId;
+        
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

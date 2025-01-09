@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section bg-light">
+    <div class="container">
+        <div class="row align-items-center min-vh-75">
+            <div class="col-lg-6 py-5">
+                <h1 class="display-4 fw-bold mb-4">Invest in Retail Success</h1>
+                <p class="lead mb-4">Join our innovative retail ecosystem. Invest in products, own franchises, and be part of the future of retail.</p>
+                <div class="hero-buttons">
+                    {% if not current_user.is_authenticated %}
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-3">Start Investing</a>
+                        <a href="{{ url_for('main.investment_opportunities') }}" class="btn btn-outline-primary btn-lg">Browse Products</a>
+                    {% else %}
+                        <a href="{{ url_for('main.investor_dashboard') }}" class="btn btn-primary btn-lg me-3">My Dashboard</a>
+                        <a href="{{ url_for('main.investment_opportunities') }}" class="btn btn-outline-primary btn-lg">View Opportunities</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block">
+                <img src="{{ url_for('static', filename='images/retail-hero.jpg') }}" alt="Retail Investment" class="img-fluid rounded shadow">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products Section -->
+<section class="featured-products py-5">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <h2 class="display-6 fw-bold">Featured Investment Opportunities</h2>
+            <p class="text-muted">Discover trending products with high growth potential</p>
+        </div>
+        <div class="row g-4">
+            {% for product in featured_products %}
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='images/products/' + product.id + '.jpg') }}" 
+                             class="card-img-top" alt="{{ product.name }}"
+                             onerror="this.src='{{ url_for('static', filename='images/product-default.jpg') }}'"
+                             style="height: 200px; object-fit: cover;">
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="badge bg-primary">{{ product.status.title() }}</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text text-muted">{{ product.description[:100] }}...</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-0"><strong>Min Investment:</strong></p>
+                                <p class="text-primary h5">${{ product.min_investment }}</p>
+                            </div>
+                            <div class="text-end">
+                                <p class="mb-0"><strong>Expected ROI:</strong></p>
+                                <p class="text-success h5">{{ product.expected_roi }}%</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-top-0">
+                        <a href="{{ url_for('main.product_detail', product_id=product.id) }}" 
+                           class="btn btn-outline-primary w-100">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('main.investment_opportunities') }}" class="btn btn-primary">View All Opportunities</a>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Franchises Section -->
+<section class="featured-franchises py-5 bg-light">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <h2 class="display-6 fw-bold">Featured Franchise Success Stories</h2>
+            <p class="text-muted">Learn from successful franchise owners in our network</p>
+        </div>
+        <div class="row g-4">
+            {% for franchise in featured_franchises %}
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='images/franchises/' + franchise.id + '.jpg') }}" 
+                             class="card-img-top" alt="{{ franchise.business_name }}"
+                             onerror="this.src='{{ url_for('static', filename='images/franchise-default.jpg') }}'"
+                             style="height: 200px; object-fit: cover;">
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ franchise.business_name }}</h5>
+                        <p class="text-muted mb-2"><i class="bi bi-geo-alt"></i> {{ franchise.location }}</p>
+                        <p class="card-text">{{ franchise.success_story[:150] }}...</p>
+                    </div>
+                    <div class="card-footer bg-white border-top-0">
+                        <a href="{{ url_for('main.franchise') }}#franchise-{{ franchise.id }}" 
+                           class="btn btn-outline-primary w-100">Read Full Story</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('main.franchise') }}" class="btn btn-primary">View All Success Stories</a>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="business-model py-5">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <h2 class="display-6 fw-bold">How It Works</h2>
+            <p class="text-muted">Our innovative retail ecosystem explained</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="display-4 text-primary mb-3">
+                            <i class="bi bi-search"></i>
+                        </div>
+                        <h4>Discover</h4>
+                        <p class="text-muted">Browse through our curated selection of retail investment opportunities.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="display-4 text-primary mb-3">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                        <h4>Invest</h4>
+                        <p class="text-muted">Choose your investment amount and become a stakeholder in retail success.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="display-4 text-primary mb-3">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                        <h4>Grow</h4>
+                        <p class="text-muted">Track your investments and watch your returns grow over time.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="cta py-5 bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10 col-lg-8 text-center">
+                <h2 class="display-6 fw-bold mb-4">Ready to Start Your Investment Journey?</h2>
+                <p class="lead mb-4">Join thousands of investors who are already part of our retail ecosystem.</p>
+                {% if not current_user.is_authenticated %}
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Create Account</a>
+                {% else %}
+                    <a href="{{ url_for('main.investment_opportunities') }}" class="btn btn-primary btn-lg">View Opportunities</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

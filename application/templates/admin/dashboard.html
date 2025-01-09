@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Users</h6>
+                            <h4 class="mb-0">{{ stats.total_users }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-primary-subtle">
+                            <i class="bi bi-people fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Franchises</h6>
+                            <h4 class="mb-0">{{ stats.total_franchises }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-success-subtle">
+                            <i class="bi bi-shop fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Investments</h6>
+                            <h4 class="mb-0">${{ "{:,.2f}".format(stats.total_investment_value) }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-warning-subtle">
+                            <i class="bi bi-currency-dollar fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Sales</h6>
+                            <h4 class="mb-0">${{ "{:,.2f}".format(stats.total_sales) }}</h4>
+                        </div>
+                        <div class="avatar avatar-lg bg-info-subtle">
+                            <i class="bi bi-cart fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Users -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Users</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for user in recent_users %}
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar avatar-sm me-3">
+                                    <div class="avatar-initial rounded bg-primary">
+                                        {{ user.first_name[0] }}{{ user.last_name[0] }}
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ user.first_name }} {{ user.last_name }}</h6>
+                                    <small class="text-muted">{{ user.email }}</small>
+                                </div>
+                                <small class="text-muted">{{ user.created_at.strftime('%Y-%m-%d') }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Investments -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Investments</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for investment in recent_investments %}
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">${{ "{:,.2f}".format(investment.amount) }}</h6>
+                                    <small class="text-muted">{{ investment.investor.email }}</small>
+                                </div>
+                                <small class="text-muted">{{ investment.investment_date.strftime('%Y-%m-%d') }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Applications -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Applications</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for application in recent_applications %}
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ application.business_name }}</h6>
+                                    <small class="text-muted">{{ application.applicant.email }}</small>
+                                </div>
+                                <span class="badge bg-{{ 'warning' if application.status == 'pending' else 'success' if application.status == 'approved' else 'danger' }}">
+                                    {{ application.status }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+{% block title %}Shipment Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Action Buttons -->
+    <div class="mb-4">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createShipmentModal">
+            <i class="bi bi-plus-lg"></i> Create Shipment
+        </button>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#batchProcessModal">
+            <i class="bi bi-collection"></i> Batch Process
+        </button>
+        <a href="{{ url_for('warehouse.export_shipments') }}" class="btn btn-outline-primary">
+            <i class="bi bi-download"></i> Export Shipments
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form class="row g-3" method="GET">
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All Status</option>
+                        <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="processing" {% if request.args.get('status') == 'processing' %}selected{% endif %}>Processing</option>
+                        <option value="shipped" {% if request.args.get('status') == 'shipped' %}selected{% endif %}>Shipped</option>
+                        <option value="delivered" {% if request.args.get('status') == 'delivered' %}selected{% endif %}>Delivered</option>
+                        <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Destination</label>
+                    <select class="form-select" name="destination">
+                        <option value="">All Destinations</option>
+                        {% for franchise in franchises %}
+                        <option value="{{ franchise.id }}" {% if request.args.get('destination') == franchise.id|string %}selected{% endif %}>
+                            {{ franchise.business_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date From</label>
+                    <input type="date" class="form-control" name="date_from" value="{{ request.args.get('date_from', '') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date To</label>
+                    <input type="date" class="form-control" name="date_to" value="{{ request.args.get('date_to', '') }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{{ url_for('warehouse.shipments') }}" class="btn btn-outline-secondary">Clear Filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Shipments Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" class="form-check-input" id="selectAll">
+                            </th>
+                            <th>Shipment ID</th>
+                            <th>Destination</th>
+                            <th>Items</th>
+                            <th>Status</th>
+                            <th>Created Date</th>
+                            <th>Expected Delivery</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shipment in shipments %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="form-check-input shipment-select" 
+                                       value="{{ shipment.id }}">
+                            </td>
+                            <td>{{ shipment.tracking_number }}</td>
+                            <td>
+                                {{ shipment.destination_franchise.business_name }}<br>
+                                <small class="text-muted">{{ shipment.destination_franchise.address }}</small>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-link" data-bs-toggle="modal" 
+                                        data-bs-target="#itemsModal{{ shipment.id }}">
+                                    View {{ shipment.items|length }} items
+                                </button>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 
+                                    'warning' if shipment.status == 'pending'
+                                    else 'info' if shipment.status == 'processing'
+                                    else 'primary' if shipment.status == 'shipped'
+                                    else 'success' if shipment.status == 'delivered'
+                                    else 'danger' }}">
+                                    {{ shipment.status }}
+                                </span>
+                            </td>
+                            <td>{{ shipment.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ shipment.expected_delivery.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" 
+                                            data-bs-target="#detailsModal{{ shipment.id }}">
+                                        View
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split" 
+                                            data-bs-toggle="dropdown"></button>
+                                    <ul class="dropdown-menu">
+                                        {% if shipment.status == 'pending' %}
+                                        <li>
+                                            <form action="{{ url_for('warehouse.process_shipment', shipment_id=shipment.id) }}" 
+                                                  method="POST" class="d-inline">
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="bi bi-box-seam me-2"></i> Start Processing
+                                                </button>
+                                            </form>
+                                        </li>
+                                        {% endif %}
+                                        {% if shipment.status == 'processing' %}
+                                        <li>
+                                            <form action="{{ url_for('warehouse.mark_shipped', shipment_id=shipment.id) }}" 
+                                                  method="POST" class="d-inline">
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="bi bi-truck me-2"></i> Mark as Shipped
+                                                </button>
+                                            </form>
+                                        </li>
+                                        {% endif %}
+                                        {% if shipment.status == 'shipped' %}
+                                        <li>
+                                            <form action="{{ url_for('warehouse.mark_delivered', shipment_id=shipment.id) }}" 
+                                                  method="POST" class="d-inline">
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="bi bi-check-circle me-2"></i> Mark as Delivered
+                                                </button>
+                                            </form>
+                                        </li>
+                                        {% endif %}
+                                        {% if shipment.status in ['pending', 'processing'] %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form action="{{ url_for('warehouse.cancel_shipment', shipment_id=shipment.id) }}" 
+                                                  method="POST" class="d-inline">
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="bi bi-x-circle me-2"></i> Cancel Shipment
+                                                </button>
+                                            </form>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination.pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+                        <a class="page-link" href="{{ url_for('warehouse.shipments', page=pagination.prev_num, **request.args) }}">Previous</a>
+                    </li>
+                    {% for page in pagination.iter_pages() %}
+                        {% if page %}
+                            <li class="page-item {{ 'active' if page == pagination.page }}">
+                                <a class="page-link" href="{{ url_for('warehouse.shipments', page=page, **request.args) }}">{{ page }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+                        <a class="page-link" href="{{ url_for('warehouse.shipments', page=pagination.next_num, **request.args) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Create Shipment Modal -->
+<div class="modal fade" id="createShipmentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Shipment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('warehouse.create_shipment') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Destination Franchise</label>
+                        <select class="form-select" name="destination_franchise" required>
+                            <option value="">Select Franchise</option>
+                            {% for franchise in franchises %}
+                            <option value="{{ franchise.id }}">{{ franchise.business_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Expected Delivery Date</label>
+                        <input type="date" class="form-control" name="expected_delivery" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Items</label>
+                        <div id="itemsList">
+                            <div class="row g-2 mb-2 item-row">
+                                <div class="col-6">
+                                    <select class="form-select" name="items[]" required>
+                                        <option value="">Select Product</option>
+                                        {% for product in products %}
+                                        <option value="{{ product.id }}">{{ product.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-4">
+                                    <input type="number" class="form-control" name="quantities[]" 
+                                           placeholder="Quantity" required min="1">
+                                </div>
+                                <div class="col-2">
+                                    <button type="button" class="btn btn-outline-danger remove-item">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="addItem">
+                            <i class="bi bi-plus-lg"></i> Add Item
+                        </button>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Shipment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Shipment Details Modal -->
+{% for shipment in shipments %}
+<div class="modal fade" id="detailsModal{{ shipment.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Shipment Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6>Basic Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td class="text-muted">Tracking Number</td>
+                                <td>{{ shipment.tracking_number }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Status</td>
+                                <td>{{ shipment.status }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Created Date</td>
+                                <td>{{ shipment.created_at.strftime('%Y-%m-%d') }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Expected Delivery</td>
+                                <td>{{ shipment.expected_delivery.strftime('%Y-%m-%d') }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Destination Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td class="text-muted">Franchise</td>
+                                <td>{{ shipment.destination_franchise.business_name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Address</td>
+                                <td>{{ shipment.destination_franchise.address }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Contact</td>
+                                <td>{{ shipment.destination_franchise.phone }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-12">
+                        <h6>Items</h6>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Quantity</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in shipment.items %}
+                                <tr>
+                                    <td>{{ item.product.name }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if item.picked else 'warning' }}">
+                                            {{ 'Picked' if item.picked else 'Pending' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if shipment.notes %}
+                    <div class="col-12">
+                        <h6>Notes</h6>
+                        <p class="mb-0">{{ shipment.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                {% if shipment.status == 'pending' %}
+                <form action="{{ url_for('warehouse.process_shipment', shipment_id=shipment.id) }}" 
+                      method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-primary">Start Processing</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Select All Checkbox
+    const selectAll = document.getElementById('selectAll');
+    const shipmentCheckboxes = document.querySelectorAll('.shipment-select');
+
+    selectAll.addEventListener('change', function() {
+        shipmentCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+
+    // Add/Remove Item Rows
+    const itemsList = document.getElementById('itemsList');
+    const addItemBtn = document.getElementById('addItem');
+
+    addItemBtn.addEventListener('click', function() {
+        const newRow = itemsList.children[0].cloneNode(true);
+        newRow.querySelectorAll('input, select').forEach(input => input.value = '');
+        newRow.querySelector('.remove-item').addEventListener('click', function() {
+            if (itemsList.children.length > 1) {
+                this.closest('.item-row').remove();
+            }
+        });
+        itemsList.appendChild(newRow);
+    });
+
+    document.querySelectorAll('.remove-item').forEach(button => {
+        button.addEventListener('click', function() {
+            if (itemsList.children.length > 1) {
+                this.closest('.item-row').remove();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

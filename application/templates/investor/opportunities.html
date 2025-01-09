@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block title %}Investment Opportunities{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form class="row g-3" method="GET">
+                <div class="col-md-3">
+                    <label class="form-label">Category</label>
+                    <select class="form-select" name="category">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category }}" {% if request.args.get('category') == category %}selected{% endif %}>
+                            {{ category }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Risk Level</label>
+                    <select class="form-select" name="risk">
+                        <option value="">All Levels</option>
+                        <option value="low" {% if request.args.get('risk') == 'low' %}selected{% endif %}>Low</option>
+                        <option value="medium" {% if request.args.get('risk') == 'medium' %}selected{% endif %}>Medium</option>
+                        <option value="high" {% if request.args.get('risk') == 'high' %}selected{% endif %}>High</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Min Investment</label>
+                    <input type="number" class="form-control" name="min_investment" 
+                           value="{{ request.args.get('min_investment', '') }}" placeholder="$">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Expected ROI</label>
+                    <select class="form-select" name="roi">
+                        <option value="">Any</option>
+                        <option value="0-5" {% if request.args.get('roi') == '0-5' %}selected{% endif %}>0-5%</option>
+                        <option value="5-10" {% if request.args.get('roi') == '5-10' %}selected{% endif %}>5-10%</option>
+                        <option value="10+" {% if request.args.get('roi') == '10+' %}selected{% endif %}>10%+</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{{ url_for('investor.opportunities') }}" class="btn btn-outline-secondary">Clear Filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Opportunities Grid -->
+    <div class="row g-4">
+        {% for product in products %}
+        <div class="col-xl-4 col-md-6">
+            <div class="card h-100">
+                {% if product.image_url %}
+                <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="card-title mb-1">{{ product.name }}</h5>
+                            <span class="badge bg-primary">{{ product.category }}</span>
+                            <span class="badge bg-{{ 'success' if product.risk_level == 'low' else 'warning' if product.risk_level == 'medium' else 'danger' }}">
+                                {{ product.risk_level|title }} Risk
+                            </span>
+                        </div>
+                        <div class="text-end">
+                            <div class="text-muted small">Min Investment</div>
+                            <strong>${{ "%.2f"|format(product.min_investment) }}</strong>
+                        </div>
+                    </div>
+
+                    <p class="card-text">{{ product.description }}</p>
+
+                    <!-- Investment Progress -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>Progress</span>
+                            <span>{{ "%.1f"|format(product.current_investment / product.total_investment_goal * 100) }}%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: {{ product.current_investment / product.total_investment_goal * 100 }}%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between small mt-1">
+                            <span>${{ "%.2f"|format(product.current_investment) }} raised</span>
+                            <span>Goal: ${{ "%.2f"|format(product.total_investment_goal) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Key Details -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <div class="text-muted small">Expected ROI</div>
+                                <strong>{{ "%.1f"|format(product.expected_roi) }}%</strong>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <div class="text-muted small">Duration</div>
+                                <strong>{{ (product.investment_deadline - product.created_at).days }} days left</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('investor.invest', product_id=product.id) }}" class="btn btn-primary">
+                            Invest Now
+                        </a>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" 
+                                data-bs-target="#productModal{{ product.id }}">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Details Modal -->
+        <div class="modal fade" id="productModal{{ product.id }}" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ product.name }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                {% if product.image_url %}
+                                <img src="{{ product.image_url }}" class="img-fluid rounded" alt="{{ product.name }}">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Product Specifications</h6>
+                                <table class="table table-sm">
+                                    {% for key, value in product.specifications.items() %}
+                                    <tr>
+                                        <td>{{ key }}</td>
+                                        <td>{{ value }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </table>
+
+                                <h6 class="mt-4">Supplier Information</h6>
+                                <table class="table table-sm">
+                                    {% for key, value in product.supplier_info.items() %}
+                                    <tr>
+                                        <td>{{ key }}</td>
+                                        <td>{{ value }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <h6>Investment Terms</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3">
+                                        <div class="text-muted small">Minimum Investment</div>
+                                        <strong>${{ "%.2f"|format(product.min_investment) }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3">
+                                        <div class="text-muted small">Expected ROI</div>
+                                        <strong>{{ "%.1f"|format(product.expected_roi) }}%</strong>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3">
+                                        <div class="text-muted small">Investment Period</div>
+                                        <strong>{{ (product.investment_deadline - product.created_at).days }} days</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <h6>Description</h6>
+                            <p>{{ product.description }}</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <a href="{{ url_for('investor.invest', product_id=product.id) }}" class="btn btn-primary">Invest Now</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-search fs-1 text-muted"></i>
+                <p class="mt-3">No investment opportunities found matching your criteria.</p>
+                <a href="{{ url_for('investor.opportunities') }}" class="btn btn-primary">Clear Filters</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+                <a class="page-link" href="{{ url_for('investor.opportunities', page=pagination.prev_num, **request.args) }}">Previous</a>
+            </li>
+            {% for page in pagination.iter_pages() %}
+                {% if page %}
+                    <li class="page-item {{ 'active' if page == pagination.page }}">
+                        <a class="page-link" href="{{ url_for('investor.opportunities', page=page, **request.args) }}">{{ page }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+                <a class="page-link" href="{{ url_for('investor.opportunities', page=pagination.next_num, **request.args) }}">Next</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

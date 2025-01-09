@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3">Investment Opportunities</h1>
+            <p class="text-muted">Discover and invest in trending retail products</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="form-select">
+                        <option value="">All Categories</option>
+                        <option value="electronics" {% if request.args.get('category') == 'electronics' %}selected{% endif %}>Electronics</option>
+                        <option value="fashion" {% if request.args.get('category') == 'fashion' %}selected{% endif %}>Fashion</option>
+                        <option value="home" {% if request.args.get('category') == 'home' %}selected{% endif %}>Home & Living</option>
+                        <option value="food" {% if request.args.get('category') == 'food' %}selected{% endif %}>Food & Beverage</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="funding" {% if request.args.get('status') == 'funding' %}selected{% endif %}>Funding</option>
+                        <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
+                        <option value="sold_out" {% if request.args.get('status') == 'sold_out' %}selected{% endif %}>Sold Out</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Min Investment</label>
+                    <select name="min_investment" class="form-select">
+                        <option value="">Any Amount</option>
+                        <option value="1000">Under $1,000</option>
+                        <option value="5000">Under $5,000</option>
+                        <option value="10000">Under $10,000</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="row g-4">
+        {% for product in products %}
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="position-relative">
+                    <img src="{{ url_for('static', filename='images/products/' + product.id|string + '.jpg') }}" 
+                         class="card-img-top" alt="{{ product.name }}"
+                         onerror="this.src='{{ url_for('static', filename='images/product-default.jpg') }}'"
+                         style="height: 200px; object-fit: cover;">
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-{{ 'primary' if product.status == 'funding' else 'secondary' }}">
+                            {{ product.status.title() }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text text-muted">{{ product.description[:100] }}...</p>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Category</small>
+                            <span class="fw-medium">{{ product.category.title() }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Stock Level</small>
+                            <span class="fw-medium">{{ product.stock_level }} units</span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">Min. Investment</small>
+                            <span class="fw-bold">${{ "%.2f"|format(product.min_investment) }}</span>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted d-block">Expected ROI</small>
+                            <span class="fw-bold text-success">{{ product.expected_roi }}%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top-0 pt-0">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('main.product_detail', product_id=product.id) }}" 
+                           class="btn btn-outline-primary">View Details</a>
+                        {% if product.status == 'funding' %}
+                        <a href="{{ url_for('main.invest', product_id=product.id) }}" 
+                           class="btn btn-primary">Invest Now</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Empty State -->
+    {% if not products %}
+    <div class="text-center py-5">
+        <i class="bi bi-search display-4 text-muted mb-3"></i>
+        <h4>No Products Found</h4>
+        <p class="text-muted">Try adjusting your filters or check back later for new opportunities</p>
+        <a href="{{ url_for('main.investment_opportunities') }}" class="btn btn-primary">Clear Filters</a>
+    </div>
+    {% endif %}
+
+    <!-- Pagination -->
+    {% if products and products|length > 0 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1">Previous</a>
+            </li>
+            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item">
+                <a class="page-link" href="#">Next</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

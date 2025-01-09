@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Hero Section -->
+<section class="about-hero bg-light py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">About RetailVest</h1>
+                <p class="lead mb-4">Democratizing retail investment opportunities and empowering entrepreneurs through innovative franchise solutions.</p>
+                <a href="{{ url_for('main.investment_opportunities') }}" class="btn btn-primary btn-lg">Explore Opportunities</a>
+            </div>
+            <div class="col-lg-6">
+                <img src="{{ url_for('static', filename='images/about-hero.jpg') }}" 
+                     alt="RetailVest Team" 
+                     class="img-fluid rounded shadow"
+                     onerror="this.src='{{ url_for('static', filename='images/about-default.jpg') }}'"
+                     loading="lazy">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Our Story Section -->
+<section class="our-story py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <h2 class="display-6 fw-bold mb-4">Our Story</h2>
+                <p class="lead mb-4">RetailVest was founded with a vision to revolutionize retail investment and franchise opportunities.</p>
+                <p class="mb-4">We believe that everyone should have access to quality retail investment opportunities. Our platform bridges the gap between retail entrepreneurs and investors, creating a symbiotic ecosystem where both can thrive. By providing transparent, accessible, and professionally managed investment options, we're making retail investment more democratic and efficient than ever before.</p>
+                <p>Through our innovative approach, we've helped hundreds of entrepreneurs realize their dreams of business ownership while providing investors with attractive returns and the satisfaction of supporting real businesses in their communities.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">Platform Metrics</h5>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0 text-primary">
+                                <i class="bi bi-people-fill fs-1"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h3 class="mb-0">500+</h3>
+                                <p class="text-muted mb-0">Active Investors</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0 text-primary">
+                                <i class="bi bi-shop fs-1"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h3 class="mb-0">100+</h3>
+                                <p class="text-muted mb-0">Franchise Locations</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0 text-primary">
+                                <i class="bi bi-cash-stack fs-1"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h3 class="mb-0">$10M+</h3>
+                                <p class="text-muted mb-0">Total Investments</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 text-primary">
+                                <i class="bi bi-graph-up fs-1"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h3 class="mb-0">25%</h3>
+                                <p class="text-muted mb-0">Average ROI</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Why Choose Us Section -->
+<section class="why-choose-us py-5 bg-light">
+    <div class="container">
+        <h2 class="display-6 fw-bold text-center mb-5">Why Choose RetailVest</h2>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <a href="{{ url_for('main.investment_opportunities') }}" class="text-decoration-none">
+                    <div class="card h-100 border-0 shadow-sm hover-lift">
+                        <div class="card-body text-center">
+                            <div class="text-primary mb-3">
+                                <i class="bi bi-search fs-1"></i>
+                            </div>
+                            <h4>Curated Opportunities</h4>
+                            <p class="text-muted">Carefully selected investment opportunities with proven business models.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <a href="{{ url_for('main.investment_analytics') }}" class="text-decoration-none">
+                    <div class="card h-100 border-0 shadow-sm hover-lift">
+                        <div class="card-body text-center">
+                            <div class="text-primary mb-3">
+                                <i class="bi bi-graph-up fs-1"></i>
+                            </div>
+                            <h4>Performance Tracking</h4>
+                            <p class="text-muted">Real-time monitoring and transparent reporting of your investments.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <a href="{{ url_for('main.franchise') }}" class="text-decoration-none">
+                    <div class="card h-100 border-0 shadow-sm hover-lift">
+                        <div class="card-body text-center">
+                            <div class="text-primary mb-3">
+                                <i class="bi bi-shield-check fs-1"></i>
+                            </div>
+                            <h4>Professional Management</h4>
+                            <p class="text-muted">Expert team ensuring optimal franchise operations and growth.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <a href="{{ url_for('main.market_analysis') }}" class="text-decoration-none">
+                    <div class="card h-100 border-0 shadow-sm hover-lift">
+                        <div class="card-body text-center">
+                            <div class="text-primary mb-3">
+                                <i class="bi bi-bar-chart fs-1"></i>
+                            </div>
+                            <h4>Market Analysis</h4>
+                            <p class="text-muted">Comprehensive market research and performance analytics.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Team Section -->
+<section class="team py-5">
+    <div class="container">
+        <h2 class="display-6 fw-bold text-center mb-5">Our Leadership Team</h2>
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-4">
+                            <img src="{{ url_for('static', filename='images/team/ceo.jpg') }}" 
+                                 class="rounded-circle img-thumbnail" 
+                                 alt="CEO"
+                                 style="width: 150px; height: 150px; object-fit: cover;"
+                                 onerror="this.src='{{ url_for('static', filename='images/team-default.jpg') }}'">
+                        </div>
+                        <h5 class="card-title">John Smith</h5>
+                        <p class="text-muted">CEO & Founder</p>
+                        <p class="card-text">20+ years of retail and investment experience</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-4">
+                            <img src="{{ url_for('static', filename='images/team/cfo.jpg') }}" 
+                                 class="rounded-circle img-thumbnail" 
+                                 alt="CFO"
+                                 style="width: 150px; height: 150px; object-fit: cover;"
+                                 onerror="this.src='{{ url_for('static', filename='images/team-default.jpg') }}'">
+                        </div>
+                        <h5 class="card-title">Sarah Johnson</h5>
+                        <p class="text-muted">CFO</p>
+                        <p class="card-text">15+ years of financial management expertise</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="mb-4">
+                            <img src="{{ url_for('static', filename='images/team/coo.jpg') }}" 
+                                 class="rounded-circle img-thumbnail" 
+                                 alt="COO"
+                                 style="width: 150px; height: 150px; object-fit: cover;"
+                                 onerror="this.src='{{ url_for('static', filename='images/team-default.jpg') }}'">
+                        </div>
+                        <h5 class="card-title">Michael Chen</h5>
+                        <p class="text-muted">COO</p>
+                        <p class="card-text">12+ years of operations and franchise management</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="cta py-5 bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10 col-lg-8 text-center">
+                <h2 class="display-6 fw-bold mb-4">Ready to Join Our Success Story?</h2>
+                <p class="lead mb-4">Start your investment journey with RetailVest today.</p>
+                {% if not current_user.is_authenticated %}
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-3">Create Account</a>
+                    <a href="{{ url_for('main.contact') }}" class="btn btn-outline-primary btn-lg">Contact Us</a>
+                {% else %}
+                    <a href="{{ url_for('main.investment_opportunities') }}" class="btn btn-primary btn-lg me-3">View Opportunities</a>
+                    <a href="{{ url_for('main.contact') }}" class="btn btn-outline-primary btn-lg">Contact Us</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.hover-lift {
+    transition: transform 0.2s ease-in-out;
+}
+.hover-lift:hover {
+    transform: translateY(-5px);
+}
+</style>
+{% endblock %}

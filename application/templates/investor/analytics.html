@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}Investment Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Performance Overview -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Total Portfolio Value</h6>
+                    <h4 class="mb-0">${{ "%.2f"|format(portfolio_performance.total_invested) }}</h4>
+                    <div class="mt-2">
+                        {% set growth = ((portfolio_performance.current_value - portfolio_performance.total_invested) / portfolio_performance.total_invested * 100) %}
+                        <span class="badge bg-{{ 'success' if growth > 0 else 'danger' }}">
+                            <i class="bi bi-arrow-{{ 'up' if growth > 0 else 'down' }}"></i>
+                            {{ "%.2f"|format(growth|abs) }}%
+                        </span>
+                        <span class="text-muted ms-1">vs Initial Investment</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Total Returns</h6>
+                    <h4 class="mb-0">${{ "%.2f"|format(portfolio_performance.total_returns) }}</h4>
+                    <div class="mt-2">
+                        {% set roi = (portfolio_performance.total_returns / portfolio_performance.total_invested * 100) %}
+                        <span class="badge bg-{{ 'success' if roi > 0 else 'danger' }}">
+                            {{ "%.2f"|format(roi) }}% ROI
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Monthly Income</h6>
+                    <h4 class="mb-0">${{ "%.2f"|format(monthly_returns[-1].amount if monthly_returns else 0) }}</h4>
+                    <div class="mt-2">
+                        {% if monthly_returns|length > 1 %}
+                        {% set growth = ((monthly_returns[-1].amount - monthly_returns[-2].amount) / monthly_returns[-2].amount * 100) %}
+                        <span class="badge bg-{{ 'success' if growth > 0 else 'danger' }}">
+                            <i class="bi bi-arrow-{{ 'up' if growth > 0 else 'down' }}"></i>
+                            {{ "%.2f"|format(growth|abs) }}%
+                        </span>
+                        <span class="text-muted ms-1">vs Last Month</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Projected Annual Returns</h6>
+                    <h4 class="mb-0">${{ "%.2f"|format(monthly_returns[-1].amount * 12 if monthly_returns else 0) }}</h4>
+                    <div class="mt-2">
+                        <span class="text-muted">Based on current performance</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Monthly Returns Chart -->
+        <div class="col-xl-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Monthly Returns</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            Last 12 Months
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">Last 6 Months</a></li>
+                            <li><a class="dropdown-item" href="#">Last 12 Months</a></li>
+                            <li><a class="dropdown-item" href="#">Year to Date</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyReturnsChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio Allocation -->
+        <div class="col-xl-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Portfolio Allocation</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="portfolioAllocationChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Investment Performance Table -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Investment Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Initial Investment</th>
+                                    <th>Current Value</th>
+                                    <th>Total Returns</th>
+                                    <th>ROI</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for investment in investments %}
+                                <tr>
+                                    <td>{{ investment.product.name }}</td>
+                                    <td>${{ "%.2f"|format(investment.amount) }}</td>
+                                    <td>${{ "%.2f"|format(investment.current_value) }}</td>
+                                    <td>
+                                        <span class="text-{{ 'success' if investment.returns > 0 else 'danger' }}">
+                                            ${{ "%.2f"|format(investment.returns) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if investment.roi > 0 else 'danger' }}">
+                                            {{ "%.2f"|format(investment.roi) }}%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if investment.status == 'active' else 'secondary' }}">
+                                            {{ investment.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Monthly Returns Chart
+    const monthlyReturnsCtx = document.getElementById('monthlyReturnsChart').getContext('2d');
+    const monthlyReturnsData = {{ monthly_returns|tojson }};
+    
+    new Chart(monthlyReturnsCtx, {
+        type: 'line',
+        data: {
+            labels: monthlyReturnsData.map(item => item.date),
+            datasets: monthlyReturnsData.reduce((acc, item) => {
+                const productIndex = acc.findIndex(ds => ds.label === item.product);
+                if (productIndex === -1) {
+                    acc.push({
+                        label: item.product,
+                        data: [item.amount],
+                        borderColor: getRandomColor(),
+                        fill: false
+                    });
+                } else {
+                    acc[productIndex].data.push(item.amount);
+                }
+                return acc;
+            }, [])
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: value => '$' + value
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Portfolio Allocation Chart
+    const portfolioCtx = document.getElementById('portfolioAllocationChart').getContext('2d');
+    const portfolioData = {{ portfolio|tojson }};
+    
+    new Chart(portfolioCtx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(portfolioData),
+            datasets: [{
+                data: Object.values(portfolioData),
+                backgroundColor: [
+                    '#0d6efd',
+                    '#198754',
+                    '#ffc107',
+                    '#dc3545',
+                    '#6610f2'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+</script>
+{% endblock %}
+{% endblock %}

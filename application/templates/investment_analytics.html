@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3">Investment Analytics</h1>
+            <p class="text-muted">Track and analyze your investment performance</p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group">
+                <button class="btn btn-outline-primary" onclick="updateTimeframe('month')">Month</button>
+                <button class="btn btn-outline-primary" onclick="updateTimeframe('quarter')">Quarter</button>
+                <button class="btn btn-outline-primary active" onclick="updateTimeframe('year')">Year</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Overview -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Total Returns</h6>
+                    <h3 class="mb-0 text-success">+18.5%</h3>
+                    <small class="text-success">
+                        <i class="bi bi-arrow-up"></i> 2.3% vs last period
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Portfolio Value</h6>
+                    <h3 class="mb-0">${{ "%.2f"|format(total_invested) }}</h3>
+                    <small class="text-success">
+                        <i class="bi bi-arrow-up"></i> $5,234 growth
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Active Investments</h6>
+                    <h3 class="mb-0">{{ active_investments }}</h3>
+                    <small class="text-muted">Across {{ categories|length }} categories</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Risk Score</h6>
+                    <h3 class="mb-0">72/100</h3>
+                    <small class="text-warning">Moderate Risk</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Charts -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Portfolio Performance</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="performanceChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Category Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Investment Details -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="mb-0">Investment Details</h5>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-outline-primary" onclick="exportData()">
+                        <i class="bi bi-download me-2"></i>Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Investment Date</th>
+                            <th>Amount</th>
+                            <th>Current Value</th>
+                            <th>Returns</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for investment in investments %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ url_for('static', filename='images/products/' + investment.product.product_id + '.jpg') }}"
+                                         alt="{{ investment.product.name }}"
+                                         class="me-2 rounded"
+                                         style="width: 40px; height: 40px; object-fit: cover;"
+                                         onerror="this.src='{{ url_for('static', filename='images/product-default.jpg') }}'">
+                                    <div>
+                                        <h6 class="mb-0">{{ investment.product.name }}</h6>
+                                        <small class="text-muted">ID: {{ investment.product.product_id }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ investment.product.category }}</td>
+                            <td>{{ investment.investment_date.strftime('%Y-%m-%d') }}</td>
+                            <td>${{ "%.2f"|format(investment.amount) }}</td>
+                            <td>${{ "%.2f"|format(investment.amount * 1.185) }}</td>
+                            <td class="text-success">+18.5%</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if investment.status == 'active' else 'secondary' }}">
+                                    {{ investment.status.title() }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Performance Chart
+const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+new Chart(performanceCtx, {
+    type: 'line',
+    data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        datasets: [{
+            label: 'Portfolio Value',
+            data: [100000, 102000, 105000, 103000, 108000, 110000, 115000, 118000, 120000, 123000, 125000, 128500],
+            borderColor: '#4299e1',
+            tension: 0.4,
+            fill: false
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: false,
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString();
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Category Distribution Chart
+const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+new Chart(categoryCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Electronics', 'Fashion', 'Home & Living', 'Food & Beverage'],
+        datasets: [{
+            data: [30, 25, 25, 20],
+            backgroundColor: ['#4299e1', '#48bb78', '#ed8936', '#9f7aea']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+function updateTimeframe(period) {
+    // Update charts based on selected timeframe
+    // This would typically make an API call to get new data
+    console.log('Updating timeframe to:', period);
+}
+
+function exportData() {
+    // Export investment data to CSV/Excel
+    console.log('Exporting data...');
+}
+</script>
+{% endblock %}
